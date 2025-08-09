@@ -181,7 +181,6 @@
                                     <option value="reading">Đọc hiểu</option>
                                 </select>
                             </div>
-                             <!-- THÊM MENU CẤP ĐỘ KHÓ CHO TOÁN -->
                             <div id="math-level-select-container" class="hidden">
                                 <label for="math-level-select" class="block text-sm font-medium text-gray-700 mb-2">Cấp độ</label>
                                 <select id="math-level-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
@@ -328,6 +327,13 @@
         let currentQuestionIndex = 0;
         let score = 0;
         let generatedExercisesCache = [];
+        
+        // --- Hàm xử lý chuỗi để loại bỏ ký tự không mong muốn ---
+        function sanitizeString(str) {
+            // Loại bỏ ký tự form feed (U+000C) và các ký tự điều khiển không in được khác
+            if (!str) return '';
+            return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+        }
 
         // --- BỘ CÔNG CỤ AI ---
         const tools = [{ functionDeclarations: [ { name: 'createMultipleChoiceQuestion', description: 'Tạo một câu hỏi trắc nghiệm.', parameters: { type: 'OBJECT', properties: { question: { type: 'STRING' }, options: { type: 'ARRAY', items: { type: 'STRING' } }, correctAnswerIndex: { type: 'NUMBER' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['question', 'options', 'correctAnswerIndex', 'explanation'] } }, { name: 'createFillInTheBlankQuestion', description: 'Tạo một câu hỏi điền vào chỗ trống.', parameters: { type: 'OBJECT', properties: { question: { type: 'STRING' }, correctAnswer: { type: 'STRING' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['question', 'correctAnswer', 'explanation'] } }, { name: 'createTrueFalseQuestion', description: 'Tạo một câu hỏi dạng Đúng hoặc Sai.', parameters: { type: 'OBJECT', properties: { statement: { type: 'STRING' }, isCorrect: { type: 'BOOLEAN' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['statement', 'isCorrect', 'explanation'] } }, { name: 'createMatchingQuestion', description: 'Tạo một bài tập nối cột.', parameters: { type: 'OBJECT', properties: { title: { type: 'STRING' }, columnA: { type: 'ARRAY', items: { type: 'STRING' } }, columnB: { type: 'ARRAY', items: { type: 'STRING' } } }, required: ['title', 'columnA', 'columnB'] } }, { name: 'createSortingQuestion', description: 'Tạo một bài tập sắp xếp các mục theo đúng thứ tự.', parameters: { type: 'OBJECT', properties: { title: { type: 'STRING' }, items: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Mảng các mục đã ở đúng thứ tự.' } }, required: ['title', 'items'] } }, { name: 'createShortAnswerQuestion', description: 'Tạo một câu hỏi tự luận ngắn.', parameters: { type: 'OBJECT', properties: { question: { type: 'STRING' }, suggestedAnswer: { type: 'STRING' } }, required: ['question', 'suggestedAnswer'] } }, { name: 'createEnglishReadingComprehensionExercise', description: 'Tạo một bài tập đọc hiểu Tiếng Anh hoàn chỉnh.', parameters: { type: 'OBJECT', properties: { passage: { type: 'STRING' }, questions: { type: 'ARRAY', items: { type: 'OBJECT', properties: { questionType: { type: 'STRING', enum: ['mcq', 'short_answer'] }, questionText: { type: 'STRING' }, options: { type: 'ARRAY', items: { type: 'STRING' } }, correctAnswer: { type: 'STRING' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['questionType', 'questionText', 'correctAnswer'] } } }, required: ['passage', 'questions'] } } ] }];
@@ -387,7 +393,7 @@
 
             if (!topic) { updateStatus('error', "Vui lòng nhập chủ đề."); setLoadingState(false); return; }
 
-            let prompt = `Luôn cung cấp một giải thích (explanation) cho mỗi câu hỏi được tạo ra. Đối với các công thức toán học, hãy luôn sử dụng định dạng KaTeX, bao gồm cả các công thức inline (được bọc trong $) và các công thức hiển thị (được bọc trong $$).`;
+            let prompt = `Luôn cung cấp một giải thích (explanation) cho mỗi câu hỏi được tạo ra. Đối với các công thức toán học, hãy luôn sử dụng định dạng KaTeX, bao gồm cả các công thức inline (được bọc trong $) và các công thức hiển thị (được bọc trong $$). Tránh sử dụng bất kỳ ký tự đặc biệt không in được nào trong các công thức.`;
             
             let counts = {};
             let requestParts = [];
@@ -503,8 +509,22 @@
 
         // --- RENDERERS (Theme Giấy thi) ---
         const renderers = { 'createMultipleChoiceQuestion': renderMultipleChoice, 'createFillInTheBlankQuestion': renderFillInTheBlank, 'createTrueFalseQuestion': renderTrueFalse, 'createMatchingQuestion': renderMatching, 'createSortingQuestion': renderSorting, 'createShortAnswerQuestion': renderShortAnswer, 'createEnglishReadingComprehensionExercise': renderReadingComprehension };
-        function createQuestionItem(title, questionId) { const item = document.createElement('div'); item.className = 'question-item'; item.id = `q-${questionId}`; if (title) { item.innerHTML = `<p class="font-bold text-lg mb-4">${title}</p>`; } return item; }
-        function createFeedbackDiv(explanation) { const div = document.createElement('div'); div.className = 'paper-feedback hidden'; div.innerHTML = explanation; return div; }
+        function createQuestionItem(title, questionId) { 
+            const item = document.createElement('div'); 
+            item.className = 'question-item'; 
+            item.id = `q-${questionId}`; 
+            if (title) { 
+                item.innerHTML = `<p class="font-bold text-lg mb-4">${sanitizeString(title)}</p>`; 
+            } 
+            return item; 
+        }
+
+        function createFeedbackDiv(explanation) { 
+            const div = document.createElement('div'); 
+            div.className = 'paper-feedback hidden'; 
+            div.innerHTML = sanitizeString(explanation); 
+            return div; 
+        }
         
         function renderMultipleChoice(args, index, isSubQuestion = false) {
             const questionId = isSubQuestion ? `reading-${index}` : index;
@@ -514,52 +534,51 @@
             item.dataset.correct = correctIndex;
             const optionsContainer = document.createElement('div'); optionsContainer.className = 'space-y-1';
             if (args.options && Array.isArray(args.options)) {
-                args.options.forEach((option, optionIndex) => { optionsContainer.innerHTML += `<label for="q${questionId}-opt${optionIndex}" class="flex items-start cursor-pointer p-2 rounded-lg hover:bg-gray-500/5 transition-colors"><input id="q${questionId}-opt${optionIndex}" name="q-${questionId}" type="radio" value="${optionIndex}" class="paper-radio"><span class="text-gray-800">${String.fromCharCode(65 + optionIndex)}. ${option}</span></label>`; });
+                args.options.forEach((option, optionIndex) => { optionsContainer.innerHTML += `<label for="q${questionId}-opt${optionIndex}" class="flex items-start cursor-pointer p-2 rounded-lg hover:bg-gray-500/5 transition-colors"><input id="q${questionId}-opt${optionIndex}" name="q-${questionId}" type="radio" value="${optionIndex}" class="paper-radio"><span class="text-gray-800">${String.fromCharCode(65 + optionIndex)}. ${sanitizeString(option)}</span></label>`; });
             }
             item.appendChild(optionsContainer);
             const explanation = args.explanation || `Đáp án đúng là lựa chọn ${String.fromCharCode(65 + correctIndex)}.`;
-            item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${explanation}`));
+            item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${sanitizeString(explanation)}`));
             return item;
         }
 
         function renderFillInTheBlank(args, index) {
-            const title = `<strong>Câu ${index}:</strong> ${args.question}`;
-            const item = createQuestionItem(title, index); item.dataset.type = 'fib'; item.dataset.correct = args.correctAnswer;
-            // CẬP NHẬT: Chia câu hỏi thành các phần để chèn input vào đúng vị trí
-            const questionParts = args.question.split('___');
+            const title = `<strong>Câu ${index}:</strong> ${sanitizeString(args.question)}`;
+            const item = createQuestionItem(title, index); item.dataset.type = 'fib'; item.dataset.correct = sanitizeString(args.correctAnswer);
+            const questionParts = sanitizeString(args.question).split('___');
             let questionHtml = questionParts[0];
             for (let i = 1; i < questionParts.length; i++) {
                 questionHtml += `<input type="text" class="inline-block w-48 border-b-2 border-dotted border-gray-500 focus:border-solid focus:border-blue-800 bg-transparent outline-none text-center" placeholder="điền vào đây">` + questionParts[i];
             }
             item.querySelector('p').innerHTML = `<strong>Câu ${index}:</strong> ${questionHtml}`;
 
-            item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${args.explanation || `Đáp án đúng là "${args.correctAnswer}".`}`));
+            item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${sanitizeString(args.explanation || `Đáp án đúng là "${args.correctAnswer}".`)}`));
             return item;
         }
 
         function renderTrueFalse(args, index) {
-            const title = `<strong>Câu ${index}:</strong> ${args.statement}`;
-            const item = createQuestionItem(title, index); item.dataset.type = 'tf'; item.dataset.correct = args.isCorrect;
+            const title = `<strong>Câu ${index}:</strong> ${sanitizeString(args.statement)}`;
+            const item = createQuestionItem(title, index); item.dataset.type = 'tf'; item.dataset.correct = sanitizeString(String(args.isCorrect));
             item.innerHTML += `<div class="flex space-x-6 mt-2">
                 <label for="q${index}-true" class="flex items-center cursor-pointer"><input id="q${index}-true" name="q-${index}" type="radio" value="true" class="paper-radio mr-2"><span class="text-gray-800">Đúng</span></label>
                 <label for="q${index}-false" class="flex items-center cursor-pointer"><input id="q${index}-false" name="q-${index}" type="radio" value="false" class="paper-radio mr-2"><span class="text-gray-800">Sai</span></label>
             </div>`;
-            item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${args.explanation || `Đáp án đúng là ${args.isCorrect ? 'Đúng' : 'Sai'}.`}`));
+            item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${sanitizeString(args.explanation || `Đáp án đúng là ${args.isCorrect ? 'Đúng' : 'Sai'}.`)}`));
             return item;
         }
         
         function renderMatching(args, index) {
-            const title = `<strong>Câu ${index}:</strong> ${args.title}`;
+            const title = `<strong>Câu ${index}:</strong> ${sanitizeString(args.title)}`;
             const item = createQuestionItem(title, index); 
             item.dataset.type = 'matching';
-            const correctMapping = args.columnA.map((itemA, idx) => ({ itemA, itemB: args.columnB[idx] }));
+            const correctMapping = args.columnA.map((itemA, idx) => ({ itemA: sanitizeString(itemA), itemB: sanitizeString(args.columnB[idx]) }));
             item.dataset.correct = JSON.stringify(correctMapping);
             
-            const shuffledB = [...args.columnB].sort(() => Math.random() - 0.5);
+            const shuffledB = [...args.columnB].map(b => sanitizeString(b)).sort(() => Math.random() - 0.5);
             const grid = document.createElement('div');
             grid.className = 'flex flex-col gap-4 mt-4';
             
-            args.columnA.forEach((itemA, idx) => {
+            args.columnA.map(a => sanitizeString(a)).forEach((itemA, idx) => {
                 let optionsHTML = '<option value="">-- Chọn --</option>';
                 shuffledB.forEach(itemB => { optionsHTML += `<option value="${itemB}">${itemB}</option>`; });
                 
@@ -578,10 +597,13 @@
         }
 
         function renderSorting(args, index) {
-            const title = `<strong>Câu ${index}:</strong> ${args.title}`;
-            const item = createQuestionItem(title, index); item.dataset.type = 'sorting'; item.dataset.correct = JSON.stringify(args.items);
+            const title = `<strong>Câu ${index}:</strong> ${sanitizeString(args.title)}`;
+            const item = createQuestionItem(title, index); item.dataset.type = 'sorting'; 
+            const sanitizedItems = args.items.map(i => sanitizeString(i));
+            item.dataset.correct = JSON.stringify(sanitizedItems);
+            
             const list = document.createElement('div'); list.className = 'sortable-list space-y-2 mt-4';
-            const shuffledItems = [...args.items].sort(() => Math.random() - 0.5);
+            const shuffledItems = [...sanitizedItems].sort(() => Math.random() - 0.5);
             shuffledItems.forEach(text => { 
                 list.innerHTML += `<div class="sortable-item p-2 bg-gray-500/10 border border-dashed rounded-md flex items-center text-gray-800" draggable="true"><i data-lucide="grip-vertical" class="w-5 h-5 mr-3 text-gray-500 cursor-grab"></i><span class="item-text">${text}</span></div>`; 
             });
@@ -596,7 +618,7 @@
             const title = isSubQuestion ? `Câu ${index}: ${args.questionText || args.question}` : `<strong>Câu ${index}:</strong> ${args.question}`;
             const item = createQuestionItem(title, questionId); item.dataset.type = 'saq';
             item.innerHTML += `<textarea class="mt-2 w-full p-2 border-b-2 border-dotted border-gray-500 bg-transparent focus:outline-none focus:border-solid focus:border-blue-800" rows="3" placeholder="Viết câu trả lời của bạn..."></textarea>`;
-            item.appendChild(createFeedbackDiv(`<span class="font-bold">Gợi ý đáp án:</span> ${args.suggestedAnswer || "Đây là câu hỏi mở."}`));
+            item.appendChild(createFeedbackDiv(`<span class="font-bold">Gợi ý đáp án:</span> ${sanitizeString(args.suggestedAnswer || "Đây là câu hỏi mở.")}`));
             return item;
         }
 
@@ -605,7 +627,7 @@
             const item = createQuestionItem(title, index); item.dataset.type = 'reading';
             const passageDiv = document.createElement('div');
             passageDiv.className = 'p-4 my-4 bg-gray-500/5 border-t border-b border-dashed';
-            passageDiv.innerHTML = `<p class="text-justify leading-normal">${args.passage.replace(/\n/g, '</p><p class="mt-4 text-justify leading-normal">')}</p>`;
+            passageDiv.innerHTML = `<p class="text-justify leading-normal">${sanitizeString(args.passage).replace(/\n/g, '</p><p class="mt-4 text-justify leading-normal">')}</p>`;
             item.appendChild(passageDiv);
             let subQuestionCounter = 0;
             args.questions.forEach((q) => {
@@ -903,15 +925,16 @@
 
             dynamicControlsContainer.innerHTML = controlTemplates[templateKey] || controlTemplates.general;
             lucide.createIcons();
+            const newSkillSelect = document.getElementById('skill-select');
+            if (newSkillSelect) newSkillSelect.addEventListener('change', updateDynamicControls);
+            const newMathLevelSelect = document.getElementById('math-level-select');
+            if (newMathLevelSelect) newMathLevelSelect.addEventListener('change', updateDynamicControls);
         }
         
         // --- EVENT LISTENERS ---
         modePracticeBtn.addEventListener('click', () => { modeSelect.value = 'practice'; modePracticeBtn.classList.add('bg-white', 'text-indigo-600', 'shadow'); modePracticeBtn.classList.remove('text-gray-500'); modeInteractiveBtn.classList.remove('bg-white', 'text-indigo-600', 'shadow'); modeInteractiveBtn.classList.add('text-gray-500'); });
         modeInteractiveBtn.addEventListener('click', () => { modeSelect.value = 'interactive'; modeInteractiveBtn.classList.add('bg-white', 'text-indigo-600', 'shadow'); modeInteractiveBtn.classList.remove('text-gray-500'); modePracticeBtn.classList.remove('bg-white', 'text-indigo-600', 'shadow'); modePracticeBtn.classList.add('text-gray-500'); });
         subjectSelect.addEventListener('change', updateDynamicControls);
-        // Sửa lỗi: Gán sự kiện cho các menu chọn mới
-        if (skillSelect) skillSelect.addEventListener('change', updateDynamicControls);
-        if (mathLevelSelect) mathLevelSelect.addEventListener('change', updateDynamicControls);
         
         generateButton.addEventListener('click', generateExercises);
         checkAllAnswersButton.addEventListener('click', checkAllPracticeAnswers);
