@@ -10,20 +10,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=EB+Garamond:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- KA-TEX CÁC THƯ VIỆN ĐỂ HIỂN THỊ CÔNG THỨC TOÁN HỌC -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" xintegrity="sha384-GvrpyBiDA0xW57u/p/W10uF5o5O5J7I7G9h4P6E0O5f5g5B5I5t5u5n5y5H5C5B5I5J5L5K5M5N5O5P5R5S5T5U5V5X5Y5Z5a5b5c5d5e5f5g5h5i5j5k5l5m5n5o5p5q5r5s5t5u5v5w5x5y5z" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" xintegrity="sha384-5V1QO9O9Q9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" xintegrity="sha384-l4+5oQ4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4" crossorigin="anonymous"></script>
+    <!-- KA-TEX LIBRARIES FOR MATH FORMULAS (FIXED) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
     <style>
         body { 
             font-family: 'Be Vietnam Pro', sans-serif; 
-            background-color: #e9e9e9;
+            background-color: #f0f2f5;
         }
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
-        /* --- THEME GIẤY THI --- */
+        /* --- TEST PAPER THEME --- */
         .test-paper-container {
             font-family: 'EB Garamond', serif;
             background-color: #fdfaf2;
@@ -45,7 +45,7 @@
             width: 2px;
             background-color: #ffb3b3;
         }
-        .test-paper-header {
+        .test-paper-header, .test-paper-footer {
             background: #fdfaf2;
             position: relative;
             z-index: 1;
@@ -59,7 +59,6 @@
         .question-item p, .question-item label, .question-item div {
             font-size: 1.1rem;
         }
-        /* Custom radio cho theme giấy */
         .paper-radio {
             appearance: none;
             border: 1.5px solid #888;
@@ -74,7 +73,6 @@
         .paper-radio:checked {
             background-color: #333;
         }
-        /* Phản hồi trên giấy */
         .paper-feedback {
             background-color: transparent !important;
             border: none;
@@ -98,53 +96,67 @@
             background: linear-gradient(to top, #bbdefb 50%, transparent 50%);
         }
 
-        /* Các style khác */
+        /* Other styles */
         .sortable-item { cursor: grab; user-select: none; transition: all 0.2s ease-in-out; }
         .sortable-item:active { cursor: grabbing; }
         .dragging { opacity: 0.5; background-color: #e0e7ff; transform: scale(1.02); }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* CSS MỚI: Bỏ lề đỏ trên giao diện di động */
+        /* Mobile responsiveness */
         @media (max-width: 767px) {
             .test-paper-container {
-                padding-left: 2rem; /* Giảm padding trái để lấy lại không gian */
+                padding-left: 2rem;
             }
             .test-paper-container::before {
-                content: none; /* Loại bỏ hoàn toàn đường kẻ đỏ */
+                content: none;
             }
         }
         
-        /* CSS MỚI: Cải thiện highlight đáp án */
         .highlight-correct {
-            background-color: #d1fae5; /* green-100 */
-            color: #10b981; /* green-600 */
+            background-color: #d1fae5;
+            color: #10b981;
             font-weight: bold;
             border-radius: 0.5rem;
         }
 
         .highlight-incorrect {
-            background-color: #fee2e2; /* red-100 */
-            color: #ef4444; /* red-500 */
+            background-color: #fee2e2;
+            color: #ef4444;
             font-weight: bold;
             border-radius: 0.5rem;
         }
 
-        /* Thêm style cho các công thức KaTeX */
         .katex-display {
             overflow-x: auto;
             overflow-y: hidden;
-            padding-bottom: 10px; /* Thêm padding để tránh cắt mất công thức */
+            padding-bottom: 10px;
         }
     </style>
 </head>
 <body class="text-gray-800">
 
     <div id="app-container" class="container mx-auto p-4 md:p-6 max-w-6xl">
-        <!-- GIAO DIỆN CÀI ĐẶT (VIEW 1) -->
+        <!-- NEW: AUTHENTICATION HEADER -->
+        <div id="auth-header" class="flex justify-end items-center mb-4">
+            <div id="user-info" class="hidden flex items-center gap-4">
+                <button id="history-btn" class="font-semibold text-gray-600 hover:text-indigo-600 flex items-center gap-1"><i data-lucide="history" class="w-4 h-4"></i>Lịch sử</button>
+                <img id="user-avatar" class="w-10 h-10 rounded-full" src="" alt="User Avatar">
+                <span id="user-name" class="font-semibold"></span>
+                <button id="logout-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all text-sm">Đăng xuất</button>
+            </div>
+            <div id="login-container">
+                <button id="login-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-lg transition-all flex items-center gap-2">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.021,35.596,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+                    Đăng nhập với Google
+                </button>
+            </div>
+        </div>
+
+        <!-- SETTINGS VIEW (VIEW 1) -->
         <div id="controls-view">
             <header class="text-center mb-10">
-                <div class="inline-block bg-gradient-to-r from-indigo-500 to-purple-500 p-1 rounded-xl">
+                 <div class="inline-block bg-gradient-to-r from-indigo-500 to-purple-500 p-1 rounded-xl">
                     <div class="bg-white rounded-lg p-2">
                         <i data-lucide="brain-circuit" class="w-8 h-8 text-indigo-500"></i>
                     </div>
@@ -205,9 +217,8 @@
             </main>
         </div>
 
-        <!-- GIAO DIỆN LÀM BÀI (VIEW 2) -->
+        <!-- EXERCISE VIEW (VIEW 2) -->
         <div id="exercise-view" class="hidden">
-             <!-- BỎ NÚT QUAY LẠI THEO YÊU CẦU -->
              <div class="test-paper-container">
                 <div class="test-paper-header">
                     <h2 class="text-3xl font-bold text-center text-gray-800">BÀI KIỂM TRA</h2>
@@ -218,21 +229,20 @@
                     </div>
                     <hr class="my-6 border-gray-400 border-dashed">
                 </div>
-                <!-- Chế độ luyện tập -->
+                <!-- Practice Mode -->
                 <div id="practice-mode-container">
                     <div id="exercise-list-container"></div>
-                    <div id="practice-footer" class="mt-8 text-center bg-[#fdfaf2] relative z-10">
+                    <div id="practice-footer" class="mt-8 text-center bg-[#fdfaf2] relative z-10 test-paper-footer">
                         <button id="checkAllAnswersButton" class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-6 rounded-md shadow-sm transition-all">
                             Chấm bài
                         </button>
-                        <!-- Nút mới cho chế độ Luyện tập -->
                         <div id="practice-actions-container" class="hidden mt-4 flex justify-center gap-4">
                             <button id="restart-practice-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all"><i data-lucide="rotate-cw" class="w-5 h-5 mr-2 inline-block"></i>Làm lại</button>
                             <button id="change-settings-from-practice-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-all"><i data-lucide="sliders-horizontal" class="w-5 h-5 mr-2 inline-block"></i>Đổi cài đặt</button>
                         </div>
                     </div>
                 </div>
-                <!-- Chế độ tương tác -->
+                <!-- Interactive Mode -->
                 <div id="interactive-mode-container" class="hidden">
                     <div id="interactive-header" class="flex justify-between items-center mb-4 bg-[#fdfaf2] relative z-10">
                         <div class="w-full bg-gray-300 rounded-full h-1.5">
@@ -243,49 +253,98 @@
                         </div>
                     </div>
                     <div id="interactive-question-host" class="fade-in"></div>
-                    <div id="interactive-footer" class="mt-6 bg-[#fdfaf2] relative z-10"></div>
+                    <div id="interactive-footer" class="mt-6 bg-[#fdfaf2] relative z-10 test-paper-footer"></div>
                 </div>
              </div>
         </div>
 
-        <!-- GIAO DIỆN TỔNG KẾT (VIEW 3) -->
+        <!-- SUMMARY VIEW (VIEW 3) -->
         <div id="summary-view" class="hidden">
             <div class="text-center max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-200 fade-in">
                 <i data-lucide="award" class="w-20 h-20 text-amber-500 mx-auto"></i>
                 <h2 class="text-3xl font-bold text-gray-800 mt-4">Hoàn thành!</h2>
                 <p id="summary-text" class="text-lg text-gray-600 mt-2">Bạn đã trả lời đúng 0/0 câu.</p>
                 <div class="w-full bg-gray-200 rounded-full h-4 my-6"><div id="summary-progress-bar" class="bg-gradient-to-r from-green-400 to-emerald-500 h-4 rounded-full" style="width: 0%"></div></div>
+                <div id="summary-save-status" class="text-sm text-gray-500 mb-6"></div>
                 <div class="flex justify-center gap-4 mt-8">
                     <button id="restart-quiz-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all"><i data-lucide="rotate-cw" class="w-5 h-5 mr-2 inline-block"></i>Làm lại</button>
                     <button id="change-settings-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-all"><i data-lucide="sliders-horizontal" class="w-5 h-5 mr-2 inline-block"></i>Đổi cài đặt</button>
                 </div>
             </div>
         </div>
+        
+        <!-- NEW: HISTORY VIEW (VIEW 4) -->
+        <div id="history-view" class="hidden">
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-200">
+                <div class="flex justify-between items-center border-b pb-4 mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800">Lịch sử làm bài</h2>
+                    <button id="back-to-main-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all flex items-center gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i>Quay lại</button>
+                </div>
+                <div id="history-list-container">
+                    <!-- History items will be injected here -->
+                </div>
+                 <div id="history-loading-spinner" class="text-center py-10 hidden">
+                    <svg class="spinner h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="mt-2 font-semibold">Đang tải lịch sử...</p>
+                </div>
+                <div id="no-history-message" class="text-center py-10 text-gray-500 hidden">
+                    <i data-lucide="archive-x" class="w-12 h-12 mx-auto mb-2"></i>
+                    <p>Bạn chưa có bài kiểm tra nào được lưu.</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script type="module">
-        // --- Firebase và Gemini Khởi tạo ---
+        // --- Firebase and Gemini Initialization ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
         import { getAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-ai.js";
+        // NEW: Import Auth and Firestore
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
 
-        // Sử dụng cấu hình Firebase được cung cấp
+        // Your web app's Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyAI2tN9qy9JqCySLkbTRqgGALlJfuTjg88",
-            authDomain: "shopee-3eabb.firebaseapp.com",
-            projectId: "shopee-3eabb",
-            storageBucket: "shopee-3eabb.firebasestorage.app",
-            messagingSenderId: "19651189872",
-            appId: "1:19651189872:web:fb0fff66e8c98ceb5928b5"
+            apiKey: "AIzaSyAhWdltKbJScRhhCW3FW1Hv1aza5U2Eb6Y",
+            authDomain: "aibaitap-lien.firebaseapp.com",
+            projectId: "aibaitap-lien",
+            storageBucket: "aibaitap-lien.appspot.com",
+            messagingSenderId: "956841572004",
+            appId: "1:956841572004:web:f665c7de5a7ae1312c9831"
         };
+
         const app = initializeApp(firebaseConfig);
         let model;
-        const GEMINI_MODEL_NAME = "gemini-2.5-flash";
+        const GEMINI_MODEL_NAME = "gemini-1.5-flash";
+        // NEW: Initialize Auth and Firestore
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
 
         // --- DOM Elements ---
         const controlsView = document.getElementById('controls-view');
         const exerciseView = document.getElementById('exercise-view');
         const summaryView = document.getElementById('summary-view');
+        const historyView = document.getElementById('history-view'); // New view
+        
+        // Auth elements
+        const authHeader = document.getElementById('auth-header');
+        const loginContainer = document.getElementById('login-container');
+        const loginBtn = document.getElementById('login-btn');
+        const userInfo = document.getElementById('user-info');
+        const userAvatar = document.getElementById('user-avatar');
+        const userName = document.getElementById('user-name');
+        const logoutBtn = document.getElementById('logout-btn');
+        const historyBtn = document.getElementById('history-btn');
+        
+        // History view elements
+        const historyListContainer = document.getElementById('history-list-container');
+        const backToMainBtn = document.getElementById('back-to-main-btn');
+        const historyLoadingSpinner = document.getElementById('history-loading-spinner');
+        const noHistoryMessage = document.getElementById('no-history-message');
+
         const modeSelect = document.getElementById('mode-select');
         const modePracticeBtn = document.getElementById('mode-practice-btn');
         const modeInteractiveBtn = document.getElementById('mode-interactive-btn');
@@ -295,6 +354,7 @@
         const mathLevelSelectContainer = document.getElementById('math-level-select-container');
         const mathLevelSelect = document.getElementById('math-level-select');
         const levelSelectContainer = document.getElementById('level-select-container');
+        const levelSelect = document.getElementById('level-select'); // <<< FIX: Added this declaration
         const dynamicControlsContainer = document.getElementById('dynamic-controls-container');
         const generateButton = document.getElementById('generateButton');
         const buttonText = document.getElementById('buttonText');
@@ -314,28 +374,28 @@
         const interactiveFooter = document.getElementById('interactive-footer');
         const summaryText = document.getElementById('summary-text');
         const summaryProgressBar = document.getElementById('summary-progress-bar');
+        const summarySaveStatus = document.getElementById('summary-save-status');
         const restartQuizBtn = document.getElementById('restart-quiz-btn');
         const changeSettingsBtn = document.getElementById('change-settings-btn');
         const paperSubject = document.getElementById('paper-subject');
         const paperDetails = document.getElementById('paper-details');
         const paperScore = document.getElementById('paper-score');
-        const backToSettingsBtn = document.getElementById('back-to-settings-btn');
-        if (backToSettingsBtn) backToSettingsBtn.remove();
 
         // --- State ---
         let allQuestions = [];
         let currentQuestionIndex = 0;
         let score = 0;
         let generatedExercisesCache = [];
-        
-        // --- Hàm xử lý chuỗi để loại bỏ ký tự không mong muốn ---
+        let currentUser = null; // NEW: To hold user data
+        let currentTestResult = {}; // NEW: To hold current test data before saving
+
+        // --- Utility Functions ---
         function sanitizeString(str) {
-            // Loại bỏ ký tự form feed (U+000C) và các ký tự điều khiển không in được khác
             if (!str) return '';
             return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
         }
 
-        // --- BỘ CÔNG CỤ AI ---
+        // --- AI TOOLBOX ---
         const tools = [{ functionDeclarations: [ { name: 'createMultipleChoiceQuestion', description: 'Tạo một câu hỏi trắc nghiệm.', parameters: { type: 'OBJECT', properties: { question: { type: 'STRING' }, options: { type: 'ARRAY', items: { type: 'STRING' } }, correctAnswerIndex: { type: 'NUMBER' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['question', 'options', 'correctAnswerIndex', 'explanation'] } }, { name: 'createFillInTheBlankQuestion', description: 'Tạo một câu hỏi điền vào chỗ trống.', parameters: { type: 'OBJECT', properties: { question: { type: 'STRING' }, correctAnswer: { type: 'STRING' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['question', 'correctAnswer', 'explanation'] } }, { name: 'createTrueFalseQuestion', description: 'Tạo một câu hỏi dạng Đúng hoặc Sai.', parameters: { type: 'OBJECT', properties: { statement: { type: 'STRING' }, isCorrect: { type: 'BOOLEAN' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['statement', 'isCorrect', 'explanation'] } }, { name: 'createMatchingQuestion', description: 'Tạo một bài tập nối cột.', parameters: { type: 'OBJECT', properties: { title: { type: 'STRING' }, columnA: { type: 'ARRAY', items: { type: 'STRING' } }, columnB: { type: 'ARRAY', items: { type: 'STRING' } } }, required: ['title', 'columnA', 'columnB'] } }, { name: 'createSortingQuestion', description: 'Tạo một bài tập sắp xếp các mục theo đúng thứ tự.', parameters: { type: 'OBJECT', properties: { title: { type: 'STRING' }, items: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Mảng các mục đã ở đúng thứ tự.' } }, required: ['title', 'items'] } }, { name: 'createShortAnswerQuestion', description: 'Tạo một câu hỏi tự luận ngắn.', parameters: { type: 'OBJECT', properties: { question: { type: 'STRING' }, suggestedAnswer: { type: 'STRING' } }, required: ['question', 'suggestedAnswer'] } }, { name: 'createEnglishReadingComprehensionExercise', description: 'Tạo một bài tập đọc hiểu Tiếng Anh hoàn chỉnh.', parameters: { type: 'OBJECT', properties: { passage: { type: 'STRING' }, questions: { type: 'ARRAY', items: { type: 'OBJECT', properties: { questionType: { type: 'STRING', enum: ['mcq', 'short_answer'] }, questionText: { type: 'STRING' }, options: { type: 'ARRAY', items: { type: 'STRING' } }, correctAnswer: { type: 'STRING' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['questionType', 'questionText', 'correctAnswer'] } } }, required: ['passage', 'questions'] } } ] }];
         
         // --- TEMPLATES ---
@@ -346,9 +406,9 @@
                      <div><label for="mcqCount" class="block text-xs font-medium text-gray-600 mb-1">Trắc nghiệm</label><input type="number" id="mcqCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
                     <div><label for="fibCount" class="block text-xs font-medium text-gray-600 mb-1">Điền từ</label><input type="number" id="fibCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
                      <div><label for="tfCount" class="block text-xs font-medium text-gray-600 mb-1">Đúng/Sai</label><input type="number" id="tfCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
-                    <div><label for="matchingCount" class="block text-xs font-medium text-gray-600 mb-1">Nối cột</label><input type="number" id="matchingCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
-                    <div><label for="sortingCount" class="block text-xs font-medium text-gray-600 mb-1">Sắp xếp</label><input type="number" id="sortingCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
-                    <div><label for="saqCount" class="block text-xs font-medium text-gray-600 mb-1">Tự luận ngắn</label><input type="number" id="saqCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
+                    <div><label for="matchingCount" class="block text-xs font-medium text-gray-600 mb-1">Nối cột</label><input type="number" id="matchingCount" value="0" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
+                    <div><label for="sortingCount" class="block text-xs font-medium text-gray-600 mb-1">Sắp xếp</label><input type="number" id="sortingCount" value="0" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
+                    <div><label for="saqCount" class="block text-xs font-medium text-gray-600 mb-1">Tự luận ngắn</label><input type="number" id="saqCount" value="0" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
                 </div>
             </fieldset>
         `;
@@ -360,14 +420,18 @@
             mathematics: `<h2 class="text-xl font-semibold text-gray-700 border-b pb-3 flex items-center"><i data-lucide="calculator" class="w-5 h-5 mr-2 text-indigo-500"></i>2. Tùy chỉnh nội dung</h2><div><label for="topicInput" class="block text-sm font-medium text-gray-700 mb-2">Chủ đề toán học</label><textarea id="topicInput" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ví dụ: Phương trình bậc hai, Tích phân, Hình học không gian..."></textarea></div>${commonExerciseTypesTemplate}`
         };
         
-        // --- LOGIC CHÍNH ---
+        // --- CORE LOGIC ---
         function switchView(view) {
             controlsView.classList.add('hidden');
             exerciseView.classList.add('hidden');
             summaryView.classList.add('hidden');
+            historyView.classList.add('hidden'); // Hide history view
+            authHeader.classList.remove('hidden'); // Always show auth header unless specified
+
             if (view === 'controls') controlsView.classList.remove('hidden');
             if (view === 'exercise') exerciseView.classList.remove('hidden');
             if (view === 'summary') summaryView.classList.remove('hidden');
+            if (view === 'history') historyView.classList.remove('hidden');
         }
 
         function resetQuizState() {
@@ -380,6 +444,8 @@
             paperScore.classList.add('hidden');
             if (practiceActionsContainer) practiceActionsContainer.classList.add('hidden');
             if (checkAllAnswersButton) checkAllAnswersButton.style.display = 'block';
+            summarySaveStatus.textContent = '';
+            currentTestResult = {};
         }
 
         async function generateExercises() {
@@ -393,17 +459,21 @@
 
             if (!topic) { updateStatus('error', "Vui lòng nhập chủ đề."); setLoadingState(false); return; }
 
+            // Store test details for saving later
+            currentTestResult.subject = subjectText;
+            currentTestResult.topic = topic;
+            currentTestResult.mode = modeSelect.value;
+
             let prompt = `Luôn cung cấp một giải thích (explanation) cho mỗi câu hỏi được tạo ra. Đối với các công thức toán học, hãy luôn sử dụng định dạng KaTeX, bao gồm cả các công thức inline (được bọc trong $) và các công thức hiển thị (được bọc trong $$). Tránh sử dụng bất kỳ ký tự đặc biệt không in được nào trong các công thức.`;
             
             let counts = {};
             let requestParts = [];
 
             if (subjectSelect.value === 'english') {
-                const skillSelect = document.getElementById('skill-select');
                 const skillText = skillSelect.options[skillSelect.selectedIndex].text;
-                const levelSelect = document.getElementById('level-select');
                 const levelText = levelSelect.options[levelSelect.selectedIndex].text;
                 const level = levelSelect ? levelSelect.value : 'B1';
+                currentTestResult.details = `Kỹ năng: ${skillText} - Trình độ: ${levelText}`;
                 
                 if (skillSelect.value === 'reading') {
                      counts.readingMcq = document.getElementById('readingMcqCount').value;
@@ -416,12 +486,14 @@
                  paperDetails.textContent = `Chủ đề: ${topic} - Trình độ: ${levelText}`;
 
             } else if (subjectSelect.value === 'mathematics') {
-                const mathLevelSelect = document.getElementById('math-level-select');
                 const difficulty = mathLevelSelect.value;
+                const difficultyText = mathLevelSelect.options[mathLevelSelect.selectedIndex].text;
+                currentTestResult.details = `Cấp độ: ${difficultyText}`;
                 prompt += `Dựa vào chủ đề toán học sau: "${topic}" cho cấp độ "${difficulty}", `;
-                paperDetails.textContent = `Chủ đề: ${topic} - Cấp độ: ${mathLevelSelect.options[mathLevelSelect.selectedIndex].text}`;
+                paperDetails.textContent = `Chủ đề: ${topic} - Cấp độ: ${difficultyText}`;
 
             } else { 
+                currentTestResult.details = "Chủ đề chung";
                 prompt += `Dựa vào chủ đề sau: "${topic}", `;
                 paperDetails.textContent = `Chủ đề: ${topic}`;
             }
@@ -488,28 +560,29 @@
                 }
 
             } catch (error) {
-                console.error("Lỗi khi gọi API:", error);
+                console.error("Error calling API:", error);
                 updateStatus('error', `Đã có lỗi xảy ra: ${error.message}`);
             } finally {
                 setLoadingState(false);
             }
         }
 
-        // HÀM MỚI: Hiển thị công thức toán KaTeX
         function renderMath() {
             if (window.renderMathInElement) {
+                // Use a timeout to ensure the DOM is fully updated before rendering math
                 setTimeout(() => {
                     renderMathInElement(document.body, {
                         delimiters: [
                             {left: '$$', right: '$$', display: true},
                             {left: '$', right: '$', display: false}
-                        ]
+                        ],
+                        throwOnError: false // Prevent crashing on a bad formula
                     });
                 }, 0);
             }
         }
 
-        // --- RENDERERS (Theme Giấy thi) ---
+        // --- RENDERERS (Test Paper Theme) ---
         const renderers = { 'createMultipleChoiceQuestion': renderMultipleChoice, 'createFillInTheBlankQuestion': renderFillInTheBlank, 'createTrueFalseQuestion': renderTrueFalse, 'createMatchingQuestion': renderMatching, 'createSortingQuestion': renderSorting, 'createShortAnswerQuestion': renderShortAnswer, 'createEnglishReadingComprehensionExercise': renderReadingComprehension };
         function createQuestionItem(title, questionId) { 
             const item = document.createElement('div'); 
@@ -539,7 +612,7 @@
                 args.options.forEach((option, optionIndex) => { optionsContainer.innerHTML += `<label for="q${questionId}-opt${optionIndex}" class="flex items-start cursor-pointer p-2 rounded-lg hover:bg-gray-500/5 transition-colors"><input id="q${questionId}-opt${optionIndex}" name="q-${questionId}" type="radio" value="${optionIndex}" class="paper-radio"><span class="text-gray-800">${String.fromCharCode(65 + optionIndex)}. ${sanitizeString(option)}</span></label>`; });
             }
             item.appendChild(optionsContainer);
-            const explanation = args.explanation || `Đáp án đúng là lựa chọn ${String.fromCharCode(65 + correctIndex)}.`;
+            const explanation = args.explanation || `Đáp án đúng là lựa chọn ${String.fromCharCode(65 + parseInt(correctIndex))}.`;
             item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${sanitizeString(explanation)}`));
             return item;
         }
@@ -645,7 +718,7 @@
             return item;
         }
         
-        // --- CHẾ ĐỘ LUYỆN TẬP ---
+        // --- Practice Mode ---
         function renderPracticeMode() {
             exerciseListContainer.innerHTML = '';
             let exerciseCounter = 0;
@@ -670,7 +743,7 @@
             renderMath();
         }
 
-        // --- CHẾ ĐỘ TƯƠNG TÁC ---
+        // --- Interactive Mode ---
         function renderInteractiveMode() {
             resetQuizState();
             allQuestions = generatedExercisesCache.filter(call => renderers[call.name]);
@@ -734,12 +807,18 @@
 
         function showSummary() {
             switchView('summary');
-            const percentage = allQuestions.length > 0 ? (score / allQuestions.length) * 100 : 0;
-            summaryText.textContent = `Bạn đã trả lời đúng ${score} / ${allQuestions.length} câu.`;
+            const gradableQuestions = countGradableQuestions();
+            const percentage = gradableQuestions > 0 ? (score / gradableQuestions) * 100 : 0;
+            summaryText.textContent = `Bạn đã trả lời đúng ${score} / ${gradableQuestions} câu.`;
             summaryProgressBar.style.width = `${percentage}%`;
+
+            // NEW: Prepare and save result
+            currentTestResult.score = score;
+            currentTestResult.totalGradable = gradableQuestions;
+            saveTestResult();
         }
 
-        // --- LOGIC CHẤM BÀI ---
+        // --- Grading Logic ---
         function checkSingleAnswer(q, showFeedback = false) {
             let isCorrect = false; 
             let isGraded = true;
@@ -787,7 +866,7 @@
                         isCorrect = input.value.trim().toLowerCase() === q.dataset.correct.toLowerCase();
                         if (showFeedback) { 
                             input.classList.add(isCorrect ? 'border-green-500' : 'border-red-500', 'border-solid');
-                            input.value = q.dataset.correct;
+                            input.value = isCorrect ? input.value : `${input.value} (Đúng: ${q.dataset.correct})`;
                         }
                     }
                     break;
@@ -825,7 +904,7 @@
                 case 'saq': isGraded = false; break;
                 
                 case 'reading':
-                    isGraded = false; // Bài đọc hiểu sẽ được chấm điểm dựa trên các câu hỏi con
+                    isGraded = false;
                     return { isCorrect, isGraded };
             }
             
@@ -839,12 +918,27 @@
             return { isCorrect, isGraded };
         }
 
+        function countGradableQuestions() {
+            let gradableQuestions = 0;
+            allQuestions.forEach(call => {
+                 if (call.name === 'createEnglishReadingComprehensionExercise') {
+                    call.args.questions.forEach(subQ => {
+                        if (subQ.questionType !== 'short_answer') {
+                            gradableQuestions++;
+                        }
+                    });
+                } else if (call.name !== 'createShortAnswerQuestion') {
+                     gradableQuestions++;
+                }
+            });
+            return gradableQuestions;
+        }
+
         function checkAllPracticeAnswers() {
             let totalScore = 0; 
             let gradableQuestions = 0;
             exerciseListContainer.querySelectorAll('.question-item').forEach(q => {
                 if (q.dataset.type === 'reading') {
-                    // Chấm điểm cho các câu hỏi con trong bài đọc
                     q.querySelectorAll('.question-item').forEach(subQ => {
                         const {isCorrect, isGraded} = checkSingleAnswer(subQ, true);
                         if (isGraded) { 
@@ -863,15 +957,19 @@
             paperScore.innerHTML = `<strong>Điểm số:</strong> ${totalScore} / ${gradableQuestions}`;
             paperScore.classList.remove('hidden');
             
-            // Cập nhật: Hiển thị các nút điều hướng
             if (practiceActionsContainer) practiceActionsContainer.classList.remove('hidden');
             if (checkAllAnswersButton) checkAllAnswersButton.style.display = 'none';
+
+            // NEW: Prepare and save result
+            currentTestResult.score = totalScore;
+            currentTestResult.totalGradable = gradableQuestions;
+            saveTestResult();
 
             lucide.createIcons();
             renderMath();
         }
 
-        // --- KÉO THẢ ---
+        // --- Drag & Drop ---
         function addDragDropHandlers(list) {
             list.querySelectorAll('.sortable-item').forEach(item => {
                 item.addEventListener('dragstart', () => { setTimeout(() => item.classList.add('dragging'), 0); });
@@ -881,10 +979,13 @@
                     item.dataset.y = e.touches[0].clientY;
                 });
                 item.addEventListener('touchmove', e => {
+                    e.preventDefault();
                     const touchY = e.touches[0].clientY;
                     const container = list;
                     const afterElement = getDragAfterElement(container, touchY);
-                    if (afterElement == null) { container.appendChild(item); } else { container.insertBefore(item, afterElement); }
+                    const dragged = container.querySelector('.dragging');
+                    if (!dragged) return;
+                    if (afterElement == null) { container.appendChild(dragged); } else { container.insertBefore(dragged, afterElement); }
                 });
                 item.addEventListener('touchend', () => { item.classList.remove('dragging'); });
             });
@@ -906,7 +1007,111 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
-        // --- HELPERS & KHỞI TẠO ---
+        // --- NEW: AUTHENTICATION LOGIC ---
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                loginContainer.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                userInfo.classList.add('flex');
+                userAvatar.src = user.photoURL;
+                userName.textContent = user.displayName;
+            } else {
+                // User is signed out
+                currentUser = null;
+                loginContainer.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+                userInfo.classList.remove('flex');
+            }
+        });
+
+        loginBtn.addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .catch((error) => {
+                    console.error("Authentication error:", error);
+                    updateStatus('error', `Lỗi đăng nhập: ${error.message}`);
+                });
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth).catch((error) => {
+                console.error("Sign out error:", error);
+            });
+        });
+
+        // --- NEW: FIRESTORE LOGIC ---
+        async function saveTestResult() {
+            if (!currentUser) {
+                summarySaveStatus.textContent = 'Đăng nhập để lưu kết quả của bạn.';
+                return;
+            }
+            if (!currentTestResult.totalGradable) return; // Don't save if no gradable questions
+
+            summarySaveStatus.textContent = 'Đang lưu kết quả...';
+            try {
+                const docRef = await addDoc(collection(db, "userResults"), {
+                    userId: currentUser.uid,
+                    userName: currentUser.displayName,
+                    createdAt: serverTimestamp(),
+                    ...currentTestResult
+                });
+                summarySaveStatus.textContent = 'Kết quả đã được lưu thành công!';
+                console.log("Document written with ID: ", docRef.id);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                summarySaveStatus.textContent = 'Lỗi khi lưu kết quả.';
+            }
+        }
+
+        async function renderHistory() {
+            if (!currentUser) {
+                switchView('controls'); // Or show a login prompt
+                return;
+            }
+            switchView('history');
+            historyListContainer.innerHTML = '';
+            historyLoadingSpinner.classList.remove('hidden');
+            noHistoryMessage.classList.add('hidden');
+
+            try {
+                const q = query(collection(db, "userResults"), where("userId", "==", currentUser.uid), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    noHistoryMessage.classList.remove('hidden');
+                } else {
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const date = data.createdAt ? data.createdAt.toDate().toLocaleString('vi-VN') : 'Không rõ ngày';
+                        const scoreColor = (data.score / data.totalGradable) >= 0.5 ? 'text-green-600' : 'text-red-600';
+
+                        const historyItem = `
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border-b hover:bg-gray-50">
+                                <div class="flex-grow">
+                                    <p class="font-bold text-lg text-gray-800">${data.topic}</p>
+                                    <p class="text-sm text-gray-500">${data.subject} - ${data.details || ''}</p>
+                                    <p class="text-xs text-gray-400 mt-1">${date}</p>
+                                </div>
+                                <div class="mt-2 md:mt-0 text-left md:text-right">
+                                    <p class="text-xl font-bold ${scoreColor}">${data.score} / ${data.totalGradable}</p>
+                                    <p class="text-sm capitalize">${data.mode === 'practice' ? 'Luyện tập' : 'Tương tác'}</p>
+                                </div>
+                            </div>
+                        `;
+                        historyListContainer.innerHTML += historyItem;
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching history: ", error);
+                historyListContainer.innerHTML = `<p class="text-red-500 text-center">Đã xảy ra lỗi khi tải lịch sử.</p>`;
+            } finally {
+                historyLoadingSpinner.classList.add('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        // --- HELPERS & INITIALIZATION ---
         function updateStatus(type, message) { const colors = { 'success': 'text-green-600', 'error': 'text-red-600', 'info': 'text-gray-600' }; statusMessage.textContent = message; statusMessage.className = `mt-6 text-center font-semibold ${colors[type] || 'text-gray-600'}`; }
         function setLoadingState(isLoading) { generateButton.disabled = isLoading; const icon = generateButton.querySelector('i'); if(icon) icon.classList.toggle('hidden', isLoading); buttonText.classList.toggle('hidden', isLoading); buttonSpinner.classList.toggle('hidden', !isLoading); if (isLoading) updateStatus('info', 'AI đang làm việc, vui lòng chờ trong giây lát...'); }
         function updateDynamicControls() {
@@ -940,12 +1145,9 @@
         
         generateButton.addEventListener('click', generateExercises);
         checkAllAnswersButton.addEventListener('click', checkAllPracticeAnswers);
-        document.addEventListener('click', (e) => {
-          if (e.target.id === 'back-to-settings-btn' || e.target.closest('#back-to-settings-btn')) {
-            switchView('controls');
-          }
-        });
-        restartQuizBtn.addEventListener('click', () => {
+        
+        // Restart and Change Settings Buttons
+        const handleRestart = () => {
              resetQuizState();
              allQuestions = generatedExercisesCache.filter(call => renderers[call.name]);
              switchView('exercise');
@@ -958,26 +1160,29 @@
                 interactiveModeContainer.classList.remove('hidden');
                 renderInteractiveMode();
              }
-        });
-        changeSettingsBtn.addEventListener('click', () => switchView('controls'));
-        restartPracticeBtn.addEventListener('click', () => {
-             resetQuizState();
-             allQuestions = generatedExercisesCache.filter(call => renderers[call.name]);
-             renderPracticeMode();
-             practiceModeContainer.classList.remove('hidden');
-             interactiveModeContainer.classList.add('hidden');
-        });
-        changeSettingsFromPracticeBtn.addEventListener('click', () => switchView('controls'));
+        };
+        const handleChangeSettings = () => switchView('controls');
+        restartQuizBtn.addEventListener('click', handleRestart);
+        changeSettingsBtn.addEventListener('click', handleChangeSettings);
+        restartPracticeBtn.addEventListener('click', handleRestart);
+        changeSettingsFromPracticeBtn.addEventListener('click', handleChangeSettings);
         
-        // --- KHỞI TẠO ---
-        try {
-            model = getGenerativeModel(getAI(app), { model: GEMINI_MODEL_NAME });
-            updateStatus('success', "Mô hình AI đã sẵn sàng!");
-            updateDynamicControls();
-        } catch (e) {
-            updateStatus('error', `Lỗi khởi tạo AI: ${e.message}`);
-        }
-        lucide.createIcons();
+        // History and Back Buttons
+        historyBtn.addEventListener('click', renderHistory);
+        backToMainBtn.addEventListener('click', () => switchView('controls'));
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                model = getGenerativeModel(getAI(app), { model: GEMINI_MODEL_NAME });
+                updateStatus('success', "Mô hình AI đã sẵn sàng!");
+                updateDynamicControls();
+                renderMath(); // Initial render for any static math
+            } catch (e) {
+                updateStatus('error', `Lỗi khởi tạo AI: ${e.message}`);
+            }
+            lucide.createIcons();
+        });
     </script>
 </body>
 </html>
