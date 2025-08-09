@@ -12,7 +12,7 @@
     
     <!-- KA-TEX CÁC THƯ VIỆN ĐỂ HIỂN THỊ CÔNG THỨC TOÁN HỌC -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" xintegrity="sha384-GvrpyBiDA0xW57u/p/W10uF5o5O5J7I7G9h4P6E0O5f5g5B5I5t5u5n5y5H5C5B5I5J5L5K5M5N5O5P5R5S5T5U5V5X5Y5Z5a5b5c5d5e5f5g5h5i5j5k5l5m5n5o5p5q5r5s5t5u5v5w5x5y5z" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" xintegrity="sha384-5V1QO9O9Q9O9Q9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" xintegrity="sha384-5V1QO9O9Q9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" xintegrity="sha384-l4+5oQ4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4" crossorigin="anonymous"></script>
 
     <style>
@@ -331,6 +331,7 @@
         // --- Hàm xử lý chuỗi để loại bỏ ký tự không mong muốn ---
         function sanitizeString(str) {
             // Loại bỏ ký tự form feed (U+000C) và các ký tự điều khiển không in được khác
+            if (!str) return '';
             return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
         }
 
@@ -497,12 +498,14 @@
         // HÀM MỚI: Hiển thị công thức toán KaTeX
         function renderMath() {
             if (window.renderMathInElement) {
-                renderMathInElement(document.body, {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false}
-                    ]
-                });
+                setTimeout(() => {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ]
+                    });
+                }, 0);
             }
         }
 
