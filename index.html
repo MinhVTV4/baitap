@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trợ lý AI - Giao diện Giấy thi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=EB+Garamond:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- KA-TEX CÁC THƯ VIỆN ĐỂ HIỂN THỊ CÔNG THỨC TOÁN HỌC -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" xintegrity="sha384-GvrpyBiDA0xW57u/p/W10uF5o5O5J7I7G9h4P6E0O5f5g5B5I5t5u5n5y5H5C5B5I5J5L5K5M5N5O5P5R5S5T5U5V5X5Y5Z5a5b5c5d5e5f5g5h5i5j5k5l5m5n5o5p5q5r5s5t5u5v5w5x5y5z" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" xintegrity="sha384-5V1QO9O9Q9O9Q9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9O9" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" xintegrity="sha384-l4+5oQ4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4+8o4" crossorigin="anonymous"></script>
+
+    <style>
+        body { 
+            font-family: 'Be Vietnam Pro', sans-serif; 
+            background-color: #e9e9e9;
+        }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* --- THEME GIẤY THI --- */
+        .test-paper-container {
+            font-family: 'EB Garamond', serif;
+            background-color: #fdfaf2;
+            background-image: linear-gradient(to bottom, transparent 39px, #e7e5d9 40px);
+            background-size: 100% 40px;
+            border: 1px solid #d1d1d1;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.15);
+            padding: 2rem 2rem 2rem 4rem;
+            position: relative;
+            line-height: 40px;
+            min-height: 80vh;
+        }
+        .test-paper-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50px;
+            bottom: 0;
+            width: 2px;
+            background-color: #ffb3b3;
+        }
+        .test-paper-header {
+            background: #fdfaf2;
+            position: relative;
+            z-index: 1;
+        }
+        .question-item {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 20px 0;
+        }
+        .question-item p, .question-item label, .question-item div {
+            font-size: 1.1rem;
+        }
+        /* Custom radio cho theme giấy */
+        .paper-radio {
+            appearance: none;
+            border: 1.5px solid #888;
+            border-radius: 50%;
+            width: 1rem;
+            height: 1rem;
+            position: relative;
+            top: 12px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .paper-radio:checked {
+            background-color: #333;
+        }
+        /* Phản hồi trên giấy */
+        .paper-feedback {
+            background-color: transparent !important;
+            border: none;
+            padding: 10px 0;
+            margin-top: 20px;
+            line-height: 1.5;
+            border-left: 3px solid transparent;
+            padding-left: 10px;
+            transition: all 0.3s ease-in-out;
+        }
+        .paper-feedback.correct {
+            border-left-color: #22c55e;
+            background: linear-gradient(to top, #c8e6c9 50%, transparent 50%);
+        }
+        .paper-feedback.incorrect {
+            border-left-color: #ef4444;
+            background: linear-gradient(to top, #ffcdd2 50%, transparent 50%);
+        }
+        .paper-feedback.info {
+            border-left-color: #3b82f6;
+            background: linear-gradient(to top, #bbdefb 50%, transparent 50%);
+        }
+
+        /* Các style khác */
+        .sortable-item { cursor: grab; user-select: none; transition: all 0.2s ease-in-out; }
+        .sortable-item:active { cursor: grabbing; }
+        .dragging { opacity: 0.5; background-color: #e0e7ff; transform: scale(1.02); }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CSS MỚI: Bỏ lề đỏ trên giao diện di động */
+        @media (max-width: 767px) {
+            .test-paper-container {
+                padding-left: 2rem; /* Giảm padding trái để lấy lại không gian */
+            }
+            .test-paper-container::before {
+                content: none; /* Loại bỏ hoàn toàn đường kẻ đỏ */
+            }
+        }
+        
+        /* CSS MỚI: Cải thiện highlight đáp án */
+        .highlight-correct {
+            background-color: #d1fae5; /* green-100 */
+            color: #10b981; /* green-600 */
+            font-weight: bold;
+            border-radius: 0.5rem;
+        }
+
+        .highlight-incorrect {
+            background-color: #fee2e2; /* red-100 */
+            color: #ef4444; /* red-500 */
+            font-weight: bold;
+            border-radius: 0.5rem;
+        }
+
+        /* Thêm style cho các công thức KaTeX */
+        .katex-display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 10px; /* Thêm padding để tránh cắt mất công thức */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="app-container" class="container mx-auto p-4 md:p-6 max-w-6xl">
+        <!-- GIAO DIỆN CÀI ĐẶT (VIEW 1) -->
+        <div id="controls-view">
+            <header class="text-center mb-10">
+                <div class="inline-block bg-gradient-to-r from-indigo-500 to-purple-500 p-1 rounded-xl">
+                    <div class="bg-white rounded-lg p-2">
+                        <i data-lucide="brain-circuit" class="w-8 h-8 text-indigo-500"></i>
+                    </div>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mt-4">Trợ lý Giáo dục AI</h1>
+                <p class="text-lg text-gray-500 mt-2">Kiến tạo bài tập chuyên biệt với sức mạnh của Trí tuệ Nhân tạo</p>
+            </header>
+            <main>
+                <div id="controls" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-200 mb-8">
+                    <div class="mb-8 pb-6 border-b border-gray-200">
+                        <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center"><i data-lucide="swords" class="w-5 h-5 mr-2 text-indigo-500"></i>Chọn chế độ làm bài</h2>
+                        <div class="flex items-center justify-center bg-gray-100 p-1 rounded-xl max-w-md mx-auto">
+                            <button id="mode-practice-btn" class="w-1/2 p-2 rounded-lg font-semibold text-sm transition-all bg-white text-indigo-600 shadow">Luyện tập</button>
+                            <button id="mode-interactive-btn" class="w-1/2 p-2 rounded-lg font-semibold text-sm transition-all text-gray-500">Tương tác</button>
+                        </div>
+                        <input type="hidden" id="mode-select" value="practice">
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6">
+                        <div class="space-y-6">
+                            <h2 class="text-xl font-semibold text-gray-700 border-b pb-3 flex items-center"><i data-lucide="settings-2" class="w-5 h-5 mr-2 text-indigo-500"></i>1. Cài đặt chung</h2>
+                            <div>
+                                <label for="subject-select" class="block text-sm font-medium text-gray-700 mb-2">Môn học</label>
+                                <select id="subject-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                    <option value="general">Môn học chung</option>
+                                    <option value="english">Tiếng Anh</option>
+                                    <option value="mathematics">Toán</option>
+                                </select>
+                            </div>
+                            <div id="skill-select-container" class="hidden">
+                                <label for="skill-select" class="block text-sm font-medium text-gray-700 mb-2">Kỹ năng</label>
+                                <select id="skill-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                    <option value="vocabulary">Từ vựng</option>
+                                    <option value="grammar">Ngữ pháp</option>
+                                    <option value="reading">Đọc hiểu</option>
+                                </select>
+                            </div>
+                             <!-- THÊM MENU CẤP ĐỘ KHÓ CHO TOÁN -->
+                            <div id="math-level-select-container" class="hidden">
+                                <label for="math-level-select" class="block text-sm font-medium text-gray-700 mb-2">Cấp độ</label>
+                                <select id="math-level-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                    <option value="intermediate">Lớp 6-9 (Cơ bản)</option>
+                                    <option value="advanced">Lớp 10-12 (Trung bình)</option>
+                                    <option value="expert">Nâng cao (Khó)</option>
+                                </select>
+                            </div>
+                            <div id="level-select-container" class="hidden"><label for="level-select" class="block text-sm font-medium text-gray-700 mb-2">Cấp độ (CEFR)</label><select id="level-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"><option value="A2">A2 (Sơ cấp)</option><option value="B1" selected>B1 (Trung cấp)</option><option value="B2">B2 (Trung-cao cấp)</option><option value="C1">C1 (Cao cấp)</option><option value="C2">C2 (Thành thạo)</option></select></div>
+                        </div>
+                        <div id="dynamic-controls-container" class="space-y-6"></div>
+                    </div>
+                    <div class="mt-8 pt-6 border-t border-gray-200 text-center">
+                        <button id="generateButton" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-10 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1 disabled:bg-indigo-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center justify-center mx-auto w-full md:w-auto">
+                            <i data-lucide="wand-2" class="w-5 h-5 mr-2"></i>
+                            <span id="buttonText">Bắt đầu</span>
+                            <svg id="buttonSpinner" class="spinner h-5 w-5 text-white hidden ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                 <div id="statusMessage" class="mt-6 text-center font-semibold"></div>
+            </main>
+        </div>
+
+        <!-- GIAO DIỆN LÀM BÀI (VIEW 2) -->
+        <div id="exercise-view" class="hidden">
+             <!-- BỎ NÚT QUAY LẠI THEO YÊU CẦU -->
+             <div class="test-paper-container">
+                <div class="test-paper-header">
+                    <h2 class="text-3xl font-bold text-center text-gray-800">BÀI KIỂM TRA</h2>
+                    <div class="mt-6 text-lg">
+                        <div id="paper-subject" class="font-bold"></div>
+                        <div id="paper-details" class="text-base italic text-gray-600 mt-1"></div>
+                        <div id="paper-score" class="hidden font-bold mt-2"></div>
+                    </div>
+                    <hr class="my-6 border-gray-400 border-dashed">
+                </div>
+                <!-- Chế độ luyện tập -->
+                <div id="practice-mode-container">
+                    <div id="exercise-list-container"></div>
+                    <div id="practice-footer" class="mt-8 text-center bg-[#fdfaf2] relative z-10">
+                        <button id="checkAllAnswersButton" class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-6 rounded-md shadow-sm transition-all">
+                            Chấm bài
+                        </button>
+                        <!-- Nút mới cho chế độ Luyện tập -->
+                        <div id="practice-actions-container" class="hidden mt-4 flex justify-center gap-4">
+                            <button id="restart-practice-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all"><i data-lucide="rotate-cw" class="w-5 h-5 mr-2 inline-block"></i>Làm lại</button>
+                            <button id="change-settings-from-practice-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-all"><i data-lucide="sliders-horizontal" class="w-5 h-5 mr-2 inline-block"></i>Đổi cài đặt</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Chế độ tương tác -->
+                <div id="interactive-mode-container" class="hidden">
+                    <div id="interactive-header" class="flex justify-between items-center mb-4 bg-[#fdfaf2] relative z-10">
+                        <div class="w-full bg-gray-300 rounded-full h-1.5">
+                            <div id="progress-bar" class="bg-blue-800 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div class="font-semibold text-gray-600 text-sm whitespace-nowrap ml-4">
+                            <span id="progress-text">Câu 0 / 0</span>
+                        </div>
+                    </div>
+                    <div id="interactive-question-host" class="fade-in"></div>
+                    <div id="interactive-footer" class="mt-6 bg-[#fdfaf2] relative z-10"></div>
+                </div>
+             </div>
+        </div>
+
+        <!-- GIAO DIỆN TỔNG KẾT (VIEW 3) -->
+        <div id="summary-view" class="hidden">
+            <div class="text-center max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-200 fade-in">
+                <i data-lucide="award" class="w-20 h-20 text-amber-500 mx-auto"></i>
+                <h2 class="text-3xl font-bold text-gray-800 mt-4">Hoàn thành!</h2>
+                <p id="summary-text" class="text-lg text-gray-600 mt-2">Bạn đã trả lời đúng 0/0 câu.</p>
+                <div class="w-full bg-gray-200 rounded-full h-4 my-6"><div id="summary-progress-bar" class="bg-gradient-to-r from-green-400 to-emerald-500 h-4 rounded-full" style="width: 0%"></div></div>
+                <div class="flex justify-center gap-4 mt-8">
+                    <button id="restart-quiz-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all"><i data-lucide="rotate-cw" class="w-5 h-5 mr-2 inline-block"></i>Làm lại</button>
+                    <button id="change-settings-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-all"><i data-lucide="sliders-horizontal" class="w-5 h-5 mr-2 inline-block"></i>Đổi cài đặt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script type="module">
+        // --- Firebase và Gemini Khởi tạo ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+        import { getAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-ai.js";
+
+        // Sử dụng cấu hình Firebase được cung cấp
+        const firebaseConfig = {
+            apiKey: "AIzaSyAI2tN9qy9JqCySLkbTRqgGALlJfuTjg88",
+            authDomain: "shopee-3eabb.firebaseapp.com",
+            projectId: "shopee-3eabb",
+            storageBucket: "shopee-3eabb.firebasestorage.app",
+            messagingSenderId: "19651189872",
+            appId: "1:19651189872:web:fb0fff66e8c98ceb5928b5"
+        };
+        const app = initializeApp(firebaseConfig);
+        let model;
+        const GEMINI_MODEL_NAME = "gemini-2.5-flash";
+
+        // --- DOM Elements ---
+        const controlsView = document.getElementById('controls-view');
+        const exerciseView = document.getElementById('exercise-view');
+        const summaryView = document.getElementById('summary-view');
+        const modeSelect = document.getElementById('mode-select');
+        const modePracticeBtn = document.getElementById('mode-practice-btn');
+        const modeInteractiveBtn = document.getElementById('mode-interactive-btn');
+        const subjectSelect = document.getElementById('subject-select');
+        const skillSelectContainer = document.getElementById('skill-select-container');
+        const skillSelect = document.getElementById('skill-select');
+        const mathLevelSelectContainer = document.getElementById('math-level-select-container');
+        const mathLevelSelect = document.getElementById('math-level-select');
+        const levelSelectContainer = document.getElementById('level-select-container');
+        const dynamicControlsContainer = document.getElementById('dynamic-controls-container');
+        const generateButton = document.getElementById('generateButton');
+        const buttonText = document.getElementById('buttonText');
+        const buttonSpinner = document.getElementById('buttonSpinner');
+        const statusMessage = document.getElementById('statusMessage');
+        const practiceModeContainer = document.getElementById('practice-mode-container');
+        const exerciseListContainer = document.getElementById('exercise-list-container');
+        const practiceFooter = document.getElementById('practice-footer');
+        const checkAllAnswersButton = document.getElementById('checkAllAnswersButton');
+        const practiceActionsContainer = document.getElementById('practice-actions-container');
+        const restartPracticeBtn = document.getElementById('restart-practice-btn');
+        const changeSettingsFromPracticeBtn = document.getElementById('change-settings-from-practice-btn');
+        const interactiveModeContainer = document.getElementById('interactive-mode-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const interactiveQuestionHost = document.getElementById('interactive-question-host');
+        const interactiveFooter = document.getElementById('interactive-footer');
+        const summaryText = document.getElementById('summary-text');
+        const summaryProgressBar = document.getElementById('summary-progress-bar');
+        const restartQuizBtn = document.getElementById('restart-quiz-btn');
+        const changeSettingsBtn = document.getElementById('change-settings-btn');
+        const paperSubject = document.getElementById('paper-subject');
+        const paperDetails = document.getElementById('paper-details');
+        const paperScore = document.getElementById('paper-score');
+        const backToSettingsBtn = document.getElementById('back-to-settings-btn');
+        if (backToSettingsBtn) backToSettingsBtn.remove();
+
+        // --- State ---
+        let allQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let generatedExercisesCache = [];
+
+        // --- BỘ CÔNG CỤ AI ---
+        const tools = [{ functionDeclarations: [ { name: 'createMultipleChoiceQuestion', description: 'Tạo một câu hỏi trắc nghiệm.', parameters: { type: 'OBJECT', properties: { question: { type: 'STRING' }, options: { type: 'ARRAY', items: { type: 'STRING' } }, correctAnswerIndex: { type: 'NUMBER' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['question', 'options', 'correctAnswerIndex', 'explanation'] } }, { name: 'createFillInTheBlankQuestion', description: 'Tạo một câu hỏi điền vào chỗ trống.', parameters: { type: 'OBJECT', properties: { question: { type: 'STRING' }, correctAnswer: { type: 'STRING' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['question', 'correctAnswer', 'explanation'] } }, { name: 'createTrueFalseQuestion', description: 'Tạo một câu hỏi dạng Đúng hoặc Sai.', parameters: { type: 'OBJECT', properties: { statement: { type: 'STRING' }, isCorrect: { type: 'BOOLEAN' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['statement', 'isCorrect', 'explanation'] } }, { name: 'createMatchingQuestion', description: 'Tạo một bài tập nối cột.', parameters: { type: 'OBJECT', properties: { title: { type: 'STRING' }, columnA: { type: 'ARRAY', items: { type: 'STRING' } }, columnB: { type: 'ARRAY', items: { type: 'STRING' } } }, required: ['title', 'columnA', 'columnB'] } }, { name: 'createSortingQuestion', description: 'Tạo một bài tập sắp xếp các mục theo đúng thứ tự.', parameters: { type: 'OBJECT', properties: { title: { type: 'STRING' }, items: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Mảng các mục đã ở đúng thứ tự.' } }, required: ['title', 'items'] } }, { name: 'createShortAnswerQuestion', description: 'Tạo một câu hỏi tự luận ngắn.', parameters: { type: 'OBJECT', properties: { question: { type: 'STRING' }, suggestedAnswer: { type: 'STRING' } }, required: ['question', 'suggestedAnswer'] } }, { name: 'createEnglishReadingComprehensionExercise', description: 'Tạo một bài tập đọc hiểu Tiếng Anh hoàn chỉnh.', parameters: { type: 'OBJECT', properties: { passage: { type: 'STRING' }, questions: { type: 'ARRAY', items: { type: 'OBJECT', properties: { questionType: { type: 'STRING', enum: ['mcq', 'short_answer'] }, questionText: { type: 'STRING' }, options: { type: 'ARRAY', items: { type: 'STRING' } }, correctAnswer: { type: 'STRING' }, explanation: { type: 'STRING', description: 'Giải thích ngắn gọn tại sao đáp án lại đúng.' } }, required: ['questionType', 'questionText', 'correctAnswer'] } } }, required: ['passage', 'questions'] } } ] }];
+        
+        // --- TEMPLATES ---
+        const commonExerciseTypesTemplate = `
+            <fieldset>
+                <legend class="text-sm font-medium text-gray-500 mb-3">Số lượng cho mỗi dạng bài:</legend>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                     <div><label for="mcqCount" class="block text-xs font-medium text-gray-600 mb-1">Trắc nghiệm</label><input type="number" id="mcqCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
+                    <div><label for="fibCount" class="block text-xs font-medium text-gray-600 mb-1">Điền từ</label><input type="number" id="fibCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
+                     <div><label for="tfCount" class="block text-xs font-medium text-gray-600 mb-1">Đúng/Sai</label><input type="number" id="tfCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
+                    <div><label for="matchingCount" class="block text-xs font-medium text-gray-600 mb-1">Nối cột</label><input type="number" id="matchingCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
+                    <div><label for="sortingCount" class="block text-xs font-medium text-gray-600 mb-1">Sắp xếp</label><input type="number" id="sortingCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
+                    <div><label for="saqCount" class="block text-xs font-medium text-gray-600 mb-1">Tự luận ngắn</label><input type="number" id="saqCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div>
+                </div>
+            </fieldset>
+        `;
+        const controlTemplates = {
+            general: `<h2 class="text-xl font-semibold text-gray-700 border-b pb-3 flex items-center"><i data-lucide="edit-3" class="w-5 h-5 mr-2 text-indigo-500"></i>2. Tùy chỉnh nội dung</h2><div><label for="topicInput" class="block text-sm font-medium text-gray-700 mb-2">Nhập chủ đề hoặc nội dung</label><textarea id="topicInput" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ví dụ: Lịch sử Việt Nam giai đoạn 1945-1954..."></textarea></div>${commonExerciseTypesTemplate}`,
+            english_reading: `<h2 class="text-xl font-semibold text-gray-700 border-b pb-3 flex items-center"><i data-lucide="book-open" class="w-5 h-5 mr-2 text-indigo-500"></i>2. Tùy chỉnh bài đọc</h2><div><label for="topicInput" class="block text-sm font-medium text-gray-700 mb-2">Chủ đề bài đọc</label><input type="text" id="topicInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ví dụ: The future of renewable energy"></div><fieldset class="mt-4"><legend class="text-sm font-medium text-gray-500 mb-3">Cấu hình bài đọc hiểu:</legend><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="md:col-span-1"><label for="passageLength" class="block text-xs font-medium text-gray-600 mb-1">Độ dài</label><select id="passageLength" class="w-full p-2 border border-gray-300 rounded-lg"><option value="short">Ngắn (~150 từ)</option><option value="medium" selected>Vừa (~250 từ)</option><option value="long">Dài (~400 từ)</option></select></div><div class="md:col-span-1"><label for="readingMcqCount" class="block text-xs font-medium text-gray-600 mb-1">Câu trắc nghiệm</label><input type="number" id="readingMcqCount" value="2" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div><div class="md:col-span-1"><label for="readingSaqCount" class="block text-xs font-medium text-gray-600 mb-1">Câu tự luận</label><input type="number" id="readingSaqCount" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg text-center"></div></div></fieldset>`,
+            english_grammar: `<h2 class="text-xl font-semibold text-gray-700 border-b pb-3 flex items-center"><i data-lucide="spell-check-2" class="w-5 h-5 mr-2 text-indigo-500"></i>2. Tùy chỉnh ngữ pháp</h2><div><label for="topicInput" class="block text-sm font-medium text-gray-700 mb-2">Chủ điểm ngữ pháp</label><input type="text" id="topicInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ví dụ: Present Perfect Tense, Passive Voice..."></div>${commonExerciseTypesTemplate}`,
+            english_vocabulary: `<h2 class="text-xl font-semibold text-gray-700 border-b pb-3 flex items-center"><i data-lucide="book-a" class="w-5 h-5 mr-2 text-indigo-500"></i>2. Tùy chỉnh từ vựng</h2><div><label for="topicInput" class="block text-sm font-medium text-gray-700 mb-2">Chủ đề từ vựng</label><input type="text" id="topicInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ví dụ: Travel, Technology, Environment..."></div>${commonExerciseTypesTemplate}`,
+            mathematics: `<h2 class="text-xl font-semibold text-gray-700 border-b pb-3 flex items-center"><i data-lucide="calculator" class="w-5 h-5 mr-2 text-indigo-500"></i>2. Tùy chỉnh nội dung</h2><div><label for="topicInput" class="block text-sm font-medium text-gray-700 mb-2">Chủ đề toán học</label><textarea id="topicInput" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ví dụ: Phương trình bậc hai, Tích phân, Hình học không gian..."></textarea></div>${commonExerciseTypesTemplate}`
+        };
+        
+        // --- LOGIC CHÍNH ---
+        function switchView(view) {
+            controlsView.classList.add('hidden');
+            exerciseView.classList.add('hidden');
+            summaryView.classList.add('hidden');
+            if (view === 'controls') controlsView.classList.remove('hidden');
+            if (view === 'exercise') exerciseView.classList.remove('hidden');
+            if (view === 'summary') summaryView.classList.remove('hidden');
+        }
+
+        function resetQuizState() {
+            allQuestions = [];
+            currentQuestionIndex = 0;
+            score = 0;
+            exerciseListContainer.innerHTML = '';
+            interactiveQuestionHost.innerHTML = '';
+            interactiveFooter.innerHTML = '';
+            paperScore.classList.add('hidden');
+            if (practiceActionsContainer) practiceActionsContainer.classList.add('hidden');
+            if (checkAllAnswersButton) checkAllAnswersButton.style.display = 'block';
+        }
+
+        async function generateExercises() {
+            if (!model) { updateStatus('error', "Mô hình AI chưa được khởi tạo."); return; }
+            setLoadingState(true);
+            resetQuizState();
+            
+            const subjectText = subjectSelect.options[subjectSelect.selectedIndex].text;
+            const topicInput = document.getElementById('topicInput');
+            const topic = topicInput ? topicInput.value.trim() : '';
+
+            if (!topic) { updateStatus('error', "Vui lòng nhập chủ đề."); setLoadingState(false); return; }
+
+            let prompt = `Luôn cung cấp một giải thích (explanation) cho mỗi câu hỏi được tạo ra. Đối với các công thức toán học, hãy luôn sử dụng định dạng KaTeX, bao gồm cả các công thức inline (được bọc trong $) và các công thức hiển thị (được bọc trong $$).`;
+            
+            let counts = {};
+            let requestParts = [];
+
+            if (subjectSelect.value === 'english') {
+                const skillSelect = document.getElementById('skill-select');
+                const skillText = skillSelect.options[skillSelect.selectedIndex].text;
+                const levelSelect = document.getElementById('level-select');
+                const levelText = levelSelect.options[levelSelect.selectedIndex].text;
+                const level = levelSelect ? levelSelect.value : 'B1';
+                
+                if (skillSelect.value === 'reading') {
+                     counts.readingMcq = document.getElementById('readingMcqCount').value;
+                     counts.readingSaq = document.getElementById('readingSaqCount').value;
+                     const passageLength = document.getElementById('passageLength').value;
+                     prompt += `Hãy sử dụng công cụ 'createEnglishReadingComprehensionExercise'. Tạo một bài đọc hiểu Tiếng Anh về chủ đề "${topic}" cho trình độ ${level}, dài ở mức '${passageLength}'. Bài đọc cần có ${counts.readingMcq} câu hỏi trắc nghiệm và ${counts.readingSaq} câu hỏi tự luận ngắn. Với mỗi câu trắc nghiệm, BẮT BUỘC phải cung cấp thuộc tính 'options' và 'explanation'.`;
+                } else { 
+                    prompt += `Tạo một bộ bài tập về chủ đề ${skillText} Tiếng Anh: "${topic}" cho trình độ ${level}. `;
+                }
+                 paperDetails.textContent = `Chủ đề: ${topic} - Trình độ: ${levelText}`;
+
+            } else if (subjectSelect.value === 'mathematics') {
+                const mathLevelSelect = document.getElementById('math-level-select');
+                const difficulty = mathLevelSelect.value;
+                prompt += `Dựa vào chủ đề toán học sau: "${topic}" cho cấp độ "${difficulty}", `;
+                paperDetails.textContent = `Chủ đề: ${topic} - Cấp độ: ${mathLevelSelect.options[mathLevelSelect.selectedIndex].text}`;
+
+            } else { 
+                prompt += `Dựa vào chủ đề sau: "${topic}", `;
+                paperDetails.textContent = `Chủ đề: ${topic}`;
+            }
+
+            if (subjectSelect.value !== 'english' || (subjectSelect.value === 'english' && skillSelect.value !== 'reading')) {
+                counts.mcq = document.getElementById('mcqCount').value;
+                counts.fib = document.getElementById('fibCount').value;
+                counts.tf = document.getElementById('tfCount').value;
+                counts.matching = document.getElementById('matchingCount').value;
+                counts.sorting = document.getElementById('sortingCount').value;
+                counts.saq = document.getElementById('saqCount').value;
+
+                if (counts.mcq > 0) requestParts.push(`${counts.mcq} câu trắc nghiệm`);
+                if (counts.fib > 0) requestParts.push(`${counts.fib} câu điền từ`);
+                if (counts.tf > 0) requestParts.push(`${counts.tf} câu Đúng/Sai`);
+                if (counts.matching > 0) requestParts.push(`${counts.matching} bài nối cột`);
+                if (counts.sorting > 0) requestParts.push(`${counts.sorting} bài sắp xếp`);
+                if (counts.saq > 0) requestParts.push(`${counts.saq} câu tự luận ngắn`);
+
+                if (requestParts.length > 0) {
+                     prompt += `Hãy sử dụng các công cụ được cung cấp để tạo ra: ${requestParts.join(', ')}.`;
+                } else {
+                    updateStatus('error', 'Vui lòng chọn ít nhất một dạng bài tập.');
+                    setLoadingState(false);
+                    return;
+                }
+            }
+
+            try {
+                const result = await model.generateContent({
+                    contents: [{
+                        role: 'user',
+                        parts: [{ text: prompt }]
+                    }],
+                    tools: tools,
+                });
+                
+                const functionCalls = result.response.functionCalls();
+                
+                if (!functionCalls || functionCalls.length === 0) {
+                    updateStatus('error', "AI không thể tạo bài tập. Vui lòng thử lại với chủ đề khác hoặc số lượng ít hơn.");
+                    return;
+                }
+                
+                generatedExercisesCache = functionCalls;
+                allQuestions = generatedExercisesCache.filter(call => renderers[call.name]);
+                if (allQuestions.length === 0) {
+                     updateStatus('error', "Không có bài tập hợp lệ nào được tạo.");
+                     return;
+                }
+
+                paperSubject.innerHTML = `<strong>Môn học:</strong> ${subjectText}`;
+
+                switchView('exercise');
+
+                if (modeSelect.value === 'practice') {
+                    practiceModeContainer.classList.remove('hidden');
+                    interactiveModeContainer.classList.add('hidden');
+                    renderPracticeMode();
+                } else {
+                    practiceModeContainer.classList.add('hidden');
+                    interactiveModeContainer.classList.remove('hidden');
+                    renderInteractiveMode();
+                }
+
+            } catch (error) {
+                console.error("Lỗi khi gọi API:", error);
+                updateStatus('error', `Đã có lỗi xảy ra: ${error.message}`);
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        // HÀM MỚI: Hiển thị công thức toán KaTeX
+        function renderMath() {
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ]
+                });
+            }
+        }
+
+        // --- RENDERERS (Theme Giấy thi) ---
+        const renderers = { 'createMultipleChoiceQuestion': renderMultipleChoice, 'createFillInTheBlankQuestion': renderFillInTheBlank, 'createTrueFalseQuestion': renderTrueFalse, 'createMatchingQuestion': renderMatching, 'createSortingQuestion': renderSorting, 'createShortAnswerQuestion': renderShortAnswer, 'createEnglishReadingComprehensionExercise': renderReadingComprehension };
+        function createQuestionItem(title, questionId) { const item = document.createElement('div'); item.className = 'question-item'; item.id = `q-${questionId}`; if (title) { item.innerHTML = `<p class="font-bold text-lg mb-4">${title}</p>`; } return item; }
+        function createFeedbackDiv(explanation) { const div = document.createElement('div'); div.className = 'paper-feedback hidden'; div.innerHTML = explanation; return div; }
+        
+        function renderMultipleChoice(args, index, isSubQuestion = false) {
+            const questionId = isSubQuestion ? `reading-${index}` : index;
+            const title = isSubQuestion ? `Câu ${index}: ${args.questionText || args.question}` : `<strong>Câu ${index}:</strong> ${args.question}`;
+            const item = createQuestionItem(title, questionId); item.dataset.type = 'mcq';
+            const correctIndex = args.correctAnswerIndex !== undefined ? args.correctAnswerIndex : args.correctAnswer;
+            item.dataset.correct = correctIndex;
+            const optionsContainer = document.createElement('div'); optionsContainer.className = 'space-y-1';
+            if (args.options && Array.isArray(args.options)) {
+                args.options.forEach((option, optionIndex) => { optionsContainer.innerHTML += `<label for="q${questionId}-opt${optionIndex}" class="flex items-start cursor-pointer p-2 rounded-lg hover:bg-gray-500/5 transition-colors"><input id="q${questionId}-opt${optionIndex}" name="q-${questionId}" type="radio" value="${optionIndex}" class="paper-radio"><span class="text-gray-800">${String.fromCharCode(65 + optionIndex)}. ${option}</span></label>`; });
+            }
+            item.appendChild(optionsContainer);
+            const explanation = args.explanation || `Đáp án đúng là lựa chọn ${String.fromCharCode(65 + correctIndex)}.`;
+            item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${explanation}`));
+            return item;
+        }
+
+        function renderFillInTheBlank(args, index) {
+            const title = `<strong>Câu ${index}:</strong> ${args.question}`;
+            const item = createQuestionItem(title, index); item.dataset.type = 'fib'; item.dataset.correct = args.correctAnswer;
+            // CẬP NHẬT: Chia câu hỏi thành các phần để chèn input vào đúng vị trí
+            const questionParts = args.question.split('___');
+            let questionHtml = questionParts[0];
+            for (let i = 1; i < questionParts.length; i++) {
+                questionHtml += `<input type="text" class="inline-block w-48 border-b-2 border-dotted border-gray-500 focus:border-solid focus:border-blue-800 bg-transparent outline-none text-center" placeholder="điền vào đây">` + questionParts[i];
+            }
+            item.querySelector('p').innerHTML = `<strong>Câu ${index}:</strong> ${questionHtml}`;
+
+            item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${args.explanation || `Đáp án đúng là "${args.correctAnswer}".`}`));
+            return item;
+        }
+
+        function renderTrueFalse(args, index) {
+            const title = `<strong>Câu ${index}:</strong> ${args.statement}`;
+            const item = createQuestionItem(title, index); item.dataset.type = 'tf'; item.dataset.correct = args.isCorrect;
+            item.innerHTML += `<div class="flex space-x-6 mt-2">
+                <label for="q${index}-true" class="flex items-center cursor-pointer"><input id="q${index}-true" name="q-${index}" type="radio" value="true" class="paper-radio mr-2"><span class="text-gray-800">Đúng</span></label>
+                <label for="q${index}-false" class="flex items-center cursor-pointer"><input id="q${index}-false" name="q-${index}" type="radio" value="false" class="paper-radio mr-2"><span class="text-gray-800">Sai</span></label>
+            </div>`;
+            item.appendChild(createFeedbackDiv(`<span class="font-bold">Giải thích:</span> ${args.explanation || `Đáp án đúng là ${args.isCorrect ? 'Đúng' : 'Sai'}.`}`));
+            return item;
+        }
+        
+        function renderMatching(args, index) {
+            const title = `<strong>Câu ${index}:</strong> ${args.title}`;
+            const item = createQuestionItem(title, index); 
+            item.dataset.type = 'matching';
+            const correctMapping = args.columnA.map((itemA, idx) => ({ itemA, itemB: args.columnB[idx] }));
+            item.dataset.correct = JSON.stringify(correctMapping);
+            
+            const shuffledB = [...args.columnB].sort(() => Math.random() - 0.5);
+            const grid = document.createElement('div');
+            grid.className = 'flex flex-col gap-4 mt-4';
+            
+            args.columnA.forEach((itemA, idx) => {
+                let optionsHTML = '<option value="">-- Chọn --</option>';
+                shuffledB.forEach(itemB => { optionsHTML += `<option value="${itemB}">${itemB}</option>`; });
+                
+                grid.innerHTML += `
+                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-2 border-b border-dotted">
+                        <div class="font-medium text-gray-800">${idx + 1}. ${itemA}</div>
+                        <select class="w-full md:w-auto mt-2 md:mt-0 p-1 border-b-2 border-dotted border-gray-500 bg-transparent focus:outline-none focus:border-solid focus:border-blue-800">
+                            ${optionsHTML}
+                        </select>
+                    </div>
+                `;
+            });
+            item.appendChild(grid);
+            item.appendChild(createFeedbackDiv(""));
+            return item;
+        }
+
+        function renderSorting(args, index) {
+            const title = `<strong>Câu ${index}:</strong> ${args.title}`;
+            const item = createQuestionItem(title, index); item.dataset.type = 'sorting'; item.dataset.correct = JSON.stringify(args.items);
+            const list = document.createElement('div'); list.className = 'sortable-list space-y-2 mt-4';
+            const shuffledItems = [...args.items].sort(() => Math.random() - 0.5);
+            shuffledItems.forEach(text => { 
+                list.innerHTML += `<div class="sortable-item p-2 bg-gray-500/10 border border-dashed rounded-md flex items-center text-gray-800" draggable="true"><i data-lucide="grip-vertical" class="w-5 h-5 mr-3 text-gray-500 cursor-grab"></i><span class="item-text">${text}</span></div>`; 
+            });
+            item.appendChild(list);
+            item.appendChild(createFeedbackDiv(""));
+            addDragDropHandlers(list);
+            return item;
+        }
+
+        function renderShortAnswer(args, index, isSubQuestion = false) {
+            const questionId = isSubQuestion ? `reading-${index}` : index;
+            const title = isSubQuestion ? `Câu ${index}: ${args.questionText || args.question}` : `<strong>Câu ${index}:</strong> ${args.question}`;
+            const item = createQuestionItem(title, questionId); item.dataset.type = 'saq';
+            item.innerHTML += `<textarea class="mt-2 w-full p-2 border-b-2 border-dotted border-gray-500 bg-transparent focus:outline-none focus:border-solid focus:border-blue-800" rows="3" placeholder="Viết câu trả lời của bạn..."></textarea>`;
+            item.appendChild(createFeedbackDiv(`<span class="font-bold">Gợi ý đáp án:</span> ${args.suggestedAnswer || "Đây là câu hỏi mở."}`));
+            return item;
+        }
+
+        function renderReadingComprehension(args, index) {
+            const title = `<strong>Câu ${index}:</strong> Đọc đoạn văn sau và trả lời câu hỏi.`;
+            const item = createQuestionItem(title, index); item.dataset.type = 'reading';
+            const passageDiv = document.createElement('div');
+            passageDiv.className = 'p-4 my-4 bg-gray-500/5 border-t border-b border-dashed';
+            passageDiv.innerHTML = `<p class="text-justify leading-normal">${args.passage.replace(/\n/g, '</p><p class="mt-4 text-justify leading-normal">')}</p>`;
+            item.appendChild(passageDiv);
+            let subQuestionCounter = 0;
+            args.questions.forEach((q) => {
+                subQuestionCounter++;
+                let questionElement;
+                if (q.questionType === 'mcq') {
+                    questionElement = renderMultipleChoice(q, `${index}.${subQuestionCounter}`, true);
+                } else if (q.questionType === 'short_answer') {
+                    questionElement = renderShortAnswer(q, `${index}.${subQuestionCounter}`, true);
+                }
+                if (questionElement) item.appendChild(questionElement);
+            });
+            return item;
+        }
+        
+        // --- CHẾ ĐỘ LUYỆN TẬP ---
+        function renderPracticeMode() {
+            exerciseListContainer.innerHTML = '';
+            let exerciseCounter = 0;
+            allQuestions.forEach(call => {
+                const renderFunction = renderers[call.name];
+                if (renderFunction) {
+                    exerciseCounter++;
+                    const exerciseElement = renderFunction(call.args, exerciseCounter);
+                    exerciseListContainer.appendChild(exerciseElement);
+                }
+            });
+            if (practiceFooter) {
+                practiceFooter.classList.remove('hidden');
+            }
+            if (practiceActionsContainer) {
+                practiceActionsContainer.classList.add('hidden');
+            }
+            if (checkAllAnswersButton) {
+                checkAllAnswersButton.style.display = 'block';
+            }
+            lucide.createIcons();
+            renderMath();
+        }
+
+        // --- CHẾ ĐỘ TƯƠNG TÁC ---
+        function renderInteractiveMode() {
+            resetQuizState();
+            allQuestions = generatedExercisesCache.filter(call => renderers[call.name]);
+            if (allQuestions.length > 0) {
+                 displayCurrentInteractiveQuestion();
+            } else {
+                updateStatus('error', 'Không có bài tập hợp lệ nào được tạo.');
+                switchView('controls');
+            }
+        }
+
+        function displayCurrentInteractiveQuestion() {
+            interactiveQuestionHost.innerHTML = ''; interactiveFooter.innerHTML = '';
+            interactiveQuestionHost.classList.remove('fade-in'); void interactiveQuestionHost.offsetWidth; interactiveQuestionHost.classList.add('fade-in');
+            const questionData = allQuestions[currentQuestionIndex];
+            const renderFunction = renderers[questionData.name];
+            if (renderFunction) {
+                const questionElement = renderFunction(questionData.args, currentQuestionIndex + 1);
+                interactiveQuestionHost.appendChild(questionElement);
+            }
+            const checkButton = document.createElement('button');
+            checkButton.id = 'interactive-check-btn'; checkButton.className = 'bg-blue-800 text-white font-bold py-3 px-8 rounded-md shadow-sm hover:bg-blue-900 transition disabled:bg-gray-400 disabled:cursor-not-allowed';
+            checkButton.innerHTML = 'Kiểm tra'; checkButton.disabled = true; interactiveFooter.appendChild(checkButton);
+            const enableButton = () => checkButton.disabled = false;
+            interactiveQuestionHost.addEventListener('change', enableButton, { once: true });
+            interactiveQuestionHost.addEventListener('input', enableButton, { once: true });
+            interactiveQuestionHost.addEventListener('dragend', enableButton, { once: true });
+            checkButton.addEventListener('click', checkInteractiveAnswer);
+            updateProgress();
+            lucide.createIcons();
+            renderMath();
+        }
+
+        function checkInteractiveAnswer() {
+            const questionItem = interactiveQuestionHost.querySelector('.question-item');
+            const { isCorrect, isGraded } = checkSingleAnswer(questionItem, true);
+            if (isGraded && isCorrect) { score++; confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
+            questionItem.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+            const continueButton = document.createElement('button');
+            continueButton.id = 'interactive-continue-btn';
+            continueButton.className = `font-bold py-3 px-8 rounded-md shadow-sm transition`;
+            if (!isGraded) { continueButton.className += ' bg-blue-800 hover:bg-blue-900 text-white'; } 
+            else { continueButton.className += isCorrect ? ' bg-green-600 hover:bg-green-700 text-white' : ' bg-red-600 hover:bg-red-700 text-white'; }
+            continueButton.innerHTML = 'Tiếp tục <i data-lucide="arrow-right" class="inline-block w-4 h-4 ml-1"></i>';
+            interactiveFooter.innerHTML = ''; interactiveFooter.appendChild(continueButton);
+            continueButton.addEventListener('click', showNextQuestion);
+            lucide.createIcons();
+        }
+
+        function showNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < allQuestions.length) { displayCurrentInteractiveQuestion(); } 
+            else { showSummary(); }
+        }
+
+        function updateProgress() {
+            const progress = (currentQuestionIndex / allQuestions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `Câu ${currentQuestionIndex + 1} / ${allQuestions.length}`;
+        }
+
+        function showSummary() {
+            switchView('summary');
+            const percentage = allQuestions.length > 0 ? (score / allQuestions.length) * 100 : 0;
+            summaryText.textContent = `Bạn đã trả lời đúng ${score} / ${allQuestions.length} câu.`;
+            summaryProgressBar.style.width = `${percentage}%`;
+        }
+
+        // --- LOGIC CHẤM BÀI ---
+        function checkSingleAnswer(q, showFeedback = false) {
+            let isCorrect = false; 
+            let isGraded = true;
+            let feedbackHTML = '';
+
+            switch (q.dataset.type) {
+                case 'mcq':
+                    const selectedRadioMCQ = q.querySelector('input:checked');
+                    const correctIndexMCQ = parseInt(q.dataset.correct);
+                    if (selectedRadioMCQ) {
+                        isCorrect = parseInt(selectedRadioMCQ.value) === correctIndexMCQ;
+                        if (showFeedback) {
+                             const allOptions = q.querySelectorAll('input[type="radio"]');
+                             allOptions.forEach(radio => {
+                                 const label = radio.parentElement;
+                                 if (parseInt(radio.value) === correctIndexMCQ) {
+                                     label.classList.add('highlight-correct');
+                                 } else if (radio === selectedRadioMCQ) {
+                                     label.classList.add('highlight-incorrect');
+                                 }
+                             });
+                        }
+                    }
+                    break;
+
+                case 'tf':
+                    const selectedRadioTF = q.querySelector('input:checked');
+                    const isCorrectTF = q.dataset.correct === 'true';
+                    if (selectedRadioTF) {
+                        isCorrect = (selectedRadioTF.value === 'true') === isCorrectTF;
+                        if (showFeedback) {
+                            const userChoiceLabel = q.querySelector(`label[for="${selectedRadioTF.id}"]`);
+                            if (userChoiceLabel) userChoiceLabel.classList.add(isCorrect ? 'highlight-correct' : 'highlight-incorrect');
+                            
+                            const correctId = `q${q.id.split('-')[1]}-${isCorrectTF ? 'true' : 'false'}`;
+                            const correctLabel = q.querySelector(`label[for="${correctId}"]`);
+                            if (correctLabel) correctLabel.classList.add('highlight-correct');
+                        }
+                    }
+                    break;
+                
+                case 'fib':
+                    const input = q.querySelector('input[type="text"]');
+                    if (input) {
+                        isCorrect = input.value.trim().toLowerCase() === q.dataset.correct.toLowerCase();
+                        if (showFeedback) { 
+                            input.classList.add(isCorrect ? 'border-green-500' : 'border-red-500', 'border-solid');
+                            input.value = q.dataset.correct;
+                        }
+                    }
+                    break;
+
+                case 'matching':
+                    const correctMapping = JSON.parse(q.dataset.correct);
+                    const selects = q.querySelectorAll('select');
+                    isCorrect = Array.from(selects).every((s, i) => s.value === correctMapping[i].itemB);
+                    feedbackHTML = `<span class="font-bold">Đáp án đúng:</span><ul class="list-none mt-2">`;
+                    correctMapping.forEach((item, i) => { 
+                        feedbackHTML += `<li>${item.itemA} &harr; ${item.itemB}</li>`;
+                        if (showFeedback) {
+                            const selectElement = selects[i];
+                            if (selectElement.value === item.itemB) {
+                                selectElement.classList.add('border-green-500', 'border-solid', 'highlight-correct');
+                            } else {
+                                selectElement.classList.add('border-red-500', 'border-solid', 'highlight-incorrect');
+                            }
+                        }
+                     });
+                    feedbackHTML += `</ul>`;
+                    break;
+
+                case 'sorting':
+                    const correctOrder = JSON.parse(q.dataset.correct);
+                    const userOrder = Array.from(q.querySelectorAll('.sortable-item .item-text')).map(item => item.textContent);
+                    isCorrect = JSON.stringify(userOrder) === JSON.stringify(correctOrder);
+                    feedbackHTML = `<span class="font-bold">Thứ tự đúng:</span><ol class="list-decimal list-inside mt-2">`;
+                    correctOrder.forEach((item, i) => { 
+                         feedbackHTML += `<li class="${userOrder[i] === item ? 'highlight-correct' : 'highlight-incorrect'}">${item}</li>`; 
+                    });
+                    feedbackHTML += `</ol>`;
+                    break;
+                
+                case 'saq': isGraded = false; break;
+                
+                case 'reading':
+                    isGraded = false; // Bài đọc hiểu sẽ được chấm điểm dựa trên các câu hỏi con
+                    return { isCorrect, isGraded };
+            }
+            
+            const feedbackDiv = q.querySelector('.paper-feedback');
+            if (showFeedback && feedbackDiv) {
+                if (feedbackHTML) feedbackDiv.innerHTML = feedbackHTML;
+                feedbackDiv.classList.remove('hidden');
+                feedbackDiv.classList.add(isGraded ? (isCorrect ? 'correct' : 'incorrect') : 'info');
+            }
+
+            return { isCorrect, isGraded };
+        }
+
+        function checkAllPracticeAnswers() {
+            let totalScore = 0; 
+            let gradableQuestions = 0;
+            exerciseListContainer.querySelectorAll('.question-item').forEach(q => {
+                if (q.dataset.type === 'reading') {
+                    // Chấm điểm cho các câu hỏi con trong bài đọc
+                    q.querySelectorAll('.question-item').forEach(subQ => {
+                        const {isCorrect, isGraded} = checkSingleAnswer(subQ, true);
+                        if (isGraded) { 
+                            gradableQuestions++; 
+                            if (isCorrect) totalScore++; 
+                        }
+                    });
+                } else {
+                    const {isCorrect, isGraded} = checkSingleAnswer(q, true);
+                    if (isGraded) { 
+                        gradableQuestions++; 
+                        if (isCorrect) totalScore++; 
+                    }
+                }
+            });
+            paperScore.innerHTML = `<strong>Điểm số:</strong> ${totalScore} / ${gradableQuestions}`;
+            paperScore.classList.remove('hidden');
+            
+            // Cập nhật: Hiển thị các nút điều hướng
+            if (practiceActionsContainer) practiceActionsContainer.classList.remove('hidden');
+            if (checkAllAnswersButton) checkAllAnswersButton.style.display = 'none';
+
+            lucide.createIcons();
+            renderMath();
+        }
+
+        // --- KÉO THẢ ---
+        function addDragDropHandlers(list) {
+            list.querySelectorAll('.sortable-item').forEach(item => {
+                item.addEventListener('dragstart', () => { setTimeout(() => item.classList.add('dragging'), 0); });
+                item.addEventListener('dragend', () => { item.classList.remove('dragging'); });
+                item.addEventListener('touchstart', e => {
+                    item.classList.add('dragging');
+                    item.dataset.y = e.touches[0].clientY;
+                });
+                item.addEventListener('touchmove', e => {
+                    const touchY = e.touches[0].clientY;
+                    const container = list;
+                    const afterElement = getDragAfterElement(container, touchY);
+                    if (afterElement == null) { container.appendChild(item); } else { container.insertBefore(item, afterElement); }
+                });
+                item.addEventListener('touchend', () => { item.classList.remove('dragging'); });
+            });
+            list.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(list, e.clientY);
+                const dragged = list.querySelector('.dragging');
+                if (!dragged) return;
+                if (afterElement == null) { list.appendChild(dragged); } else { list.insertBefore(dragged, afterElement); }
+            });
+        }
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.sortable-item:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
+                else { return closest; }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // --- HELPERS & KHỞI TẠO ---
+        function updateStatus(type, message) { const colors = { 'success': 'text-green-600', 'error': 'text-red-600', 'info': 'text-gray-600' }; statusMessage.textContent = message; statusMessage.className = `mt-6 text-center font-semibold ${colors[type] || 'text-gray-600'}`; }
+        function setLoadingState(isLoading) { generateButton.disabled = isLoading; const icon = generateButton.querySelector('i'); if(icon) icon.classList.toggle('hidden', isLoading); buttonText.classList.toggle('hidden', isLoading); buttonSpinner.classList.toggle('hidden', !isLoading); if (isLoading) updateStatus('info', 'AI đang làm việc, vui lòng chờ trong giây lát...'); }
+        function updateDynamicControls() {
+            const subject = subjectSelect.value;
+            skillSelectContainer.classList.add('hidden');
+            levelSelectContainer.classList.add('hidden');
+            mathLevelSelectContainer.classList.add('hidden');
+            
+            let templateKey = subject;
+            if (subject === 'english') {
+                templateKey = `english_${skillSelect.value}`;
+                skillSelectContainer.classList.remove('hidden');
+                levelSelectContainer.classList.remove('hidden');
+            } else if (subject === 'mathematics') {
+                templateKey = 'mathematics';
+                mathLevelSelectContainer.classList.remove('hidden');
+            }
+
+            dynamicControlsContainer.innerHTML = controlTemplates[templateKey] || controlTemplates.general;
+            lucide.createIcons();
+        }
+        
+        // --- EVENT LISTENERS ---
+        modePracticeBtn.addEventListener('click', () => { modeSelect.value = 'practice'; modePracticeBtn.classList.add('bg-white', 'text-indigo-600', 'shadow'); modePracticeBtn.classList.remove('text-gray-500'); modeInteractiveBtn.classList.remove('bg-white', 'text-indigo-600', 'shadow'); modeInteractiveBtn.classList.add('text-gray-500'); });
+        modeInteractiveBtn.addEventListener('click', () => { modeSelect.value = 'interactive'; modeInteractiveBtn.classList.add('bg-white', 'text-indigo-600', 'shadow'); modeInteractiveBtn.classList.remove('text-gray-500'); modePracticeBtn.classList.remove('bg-white', 'text-indigo-600', 'shadow'); modePracticeBtn.classList.add('text-gray-500'); });
+        subjectSelect.addEventListener('change', updateDynamicControls);
+        // Sửa lỗi: Gán sự kiện cho các menu chọn mới
+        if (skillSelect) skillSelect.addEventListener('change', updateDynamicControls);
+        if (mathLevelSelect) mathLevelSelect.addEventListener('change', updateDynamicControls);
+        
+        generateButton.addEventListener('click', generateExercises);
+        checkAllAnswersButton.addEventListener('click', checkAllPracticeAnswers);
+        document.addEventListener('click', (e) => {
+          if (e.target.id === 'back-to-settings-btn' || e.target.closest('#back-to-settings-btn')) {
+            switchView('controls');
+          }
+        });
+        restartQuizBtn.addEventListener('click', () => {
+             resetQuizState();
+             allQuestions = generatedExercisesCache.filter(call => renderers[call.name]);
+             switchView('exercise');
+             if (modeSelect.value === 'practice') {
+                practiceModeContainer.classList.remove('hidden');
+                interactiveModeContainer.classList.add('hidden');
+                renderPracticeMode();
+             } else {
+                practiceModeContainer.classList.add('hidden');
+                interactiveModeContainer.classList.remove('hidden');
+                renderInteractiveMode();
+             }
+        });
+        changeSettingsBtn.addEventListener('click', () => switchView('controls'));
+        restartPracticeBtn.addEventListener('click', () => {
+             resetQuizState();
+             allQuestions = generatedExercisesCache.filter(call => renderers[call.name]);
+             renderPracticeMode();
+             practiceModeContainer.classList.remove('hidden');
+             interactiveModeContainer.classList.add('hidden');
+        });
+        changeSettingsFromPracticeBtn.addEventListener('click', () => switchView('controls'));
+        
+        // --- KHỞI TẠO ---
+        try {
+            model = getGenerativeModel(getAI(app), { model: GEMINI_MODEL_NAME });
+            updateStatus('success', "Mô hình AI đã sẵn sàng!");
+            updateDynamicControls();
+        } catch (e) {
+            updateStatus('error', `Lỗi khởi tạo AI: ${e.message}`);
+        }
+        lucide.createIcons();
+    </script>
+</body>
+</html>
