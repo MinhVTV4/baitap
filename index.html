@@ -331,7 +331,6 @@
         // --- Hàm xử lý chuỗi để loại bỏ ký tự không mong muốn ---
         function sanitizeString(str) {
             // Loại bỏ ký tự form feed (U+000C) và các ký tự điều khiển không in được khác
-            if (!str) return '';
             return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
         }
 
